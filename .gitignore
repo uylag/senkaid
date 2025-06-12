@@ -1,0 +1,6 @@
+build.sh
+run.sh
+build/
+cmake/
+.vscode/
+.cache/

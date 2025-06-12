@@ -1,0 +1,46 @@
+[Directory]: include/senkaid/core/tensor
+
+[Purpose]:
+This folder contains the foundational structures and interfaces for n-dimensional tensors, generalizing the 2D `Matrix` class to arbitrary-rank containers.
+Tensors are essential for machine learning, deep learning, and scientific computing workflows that go beyond matrices and vectors.
+
+[Expected files]:
+
+- tensor.hpp
+  - Defines the primary template `Tensor<T, Rank>`, where `Rank` is known at compile-time.
+  - Supports runtime shape via `std::array<int, Rank>` or fixed-size if desired.
+  - Provides operator()(i₀, i₁, ..., iₙ₋₁), `shape()`, `size()`, `data()`.
+  - Storage may be flat buffer with computed strides.
+
+- tensor_dynamic.hpp
+  - Defines runtime-rank `Tensor<T>` (Rank unknown at compile-time).
+  - Stores shape as `std::vector<int>` and uses dynamic dispatch for indexing.
+  - Used for flexible applications like DL models, variable input sizes.
+
+- tensor_base.hpp
+  - CRTP base class for all tensor types.
+  - Provides shared interface for dimension, element access, and slicing.
+  - Used to enable zero-cost polymorphism across tensor variants.
+
+- tensor_storage.hpp
+  - Manages memory layout, stride calculation, and flattening.
+  - Shared backend for both static and dynamic tensors.
+
+- tensor_traits.hpp
+  - Contains template traits such as `is_tensor<T>`, `tensor_rank<T>`, `tensor_dim<T, N>`.
+  - Enables concept-based overload resolution and tensor-generic functions.
+
+[Optional files]:
+
+- tensor_shape.hpp
+  - Encapsulates shape logic, slicing, broadcasting compatibility, shape equality, etc.
+
+- tensor_debug.hpp
+  - Utilities to visualize and print tensors (e.g. nested loop format).
+
+[Notes]:
+- Tensors in `senkaid` should follow the same design philosophy as `Matrix`: zero-cost abstraction, optional allocation, SIMD/GPU support.
+- Tensor operations themselves (e.g. contraction, reduction) should live in `ops/` and `engine/`, not here.
+- The layout system from `core/layout/` is shared and reused (row-major, column-major, custom strides).
+- The static and dynamic tensor types should be interoperable wherever possible (e.g. `.as_dynamic()`).
+

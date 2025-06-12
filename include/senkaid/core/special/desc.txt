@@ -1,0 +1,51 @@
+[Directory]: include/senkaid/core/special
+
+[Purpose]:
+This folder provides definitions for **special structured matrices** and generators, such as identity, zero, diagonal, constant, and triangular matrices. These types are lightweight, often constexpr-compatible, and optimized to avoid unnecessary storage or computation.
+
+They are useful for:
+- fast initialization
+- symbolic expressions
+- mathematical correctness
+- optimization (e.g. skipping multiplication with identity)
+
+[Expected files]:
+
+- identity_matrix.hpp
+  - Defines `IdentityMatrix<T, N>` and/or dynamic-size variant.
+  - Implements implicit operator()(i, j) returning 1 if i == j, 0 otherwise.
+  - Can be used in expression templates without actual memory storage.
+
+- zero_matrix.hpp
+  - Defines `ZeroMatrix<T, R, C>` returning zero for all (i, j).
+  - Useful for default-initialized expressions or to avoid allocating a full zeroed matrix.
+
+- constant_matrix.hpp
+  - Defines `ConstantMatrix<T, R, C>` with a single repeated value.
+  - Example: `ConstantMatrix<float, 3, 3>(7.0f)` returns 7 for all elements.
+
+- diagonal_matrix.hpp
+  - Defines `DiagonalMatrix<T, N>` with only diagonal values stored.
+  - Supports operator()(i, j) returning 0 when i ≠ j.
+  - Supports fast multiplication with vectors or matrices.
+
+- triangular_matrix.hpp
+  - Defines upper/lower triangular wrappers: `TriangularMatrix<T, R, C, Upper/Lower>`
+  - Could internally reference a base matrix and mask the unused part.
+  - Used for `solve()` routines and Cholesky decomposition.
+
+[Optional files]:
+
+- special_traits.hpp
+  - Defines `is_special_matrix<T>`, `is_identity<T>`, etc. for template dispatching.
+
+- special_utils.hpp
+  - Common operations on special types: multiplication rules, trace, determinant shortcuts.
+
+[Notes]:
+- These types often do **not** store full matrix data — they are virtual/implicit.
+- Integration with expression templates allows lazy evaluation and optimization.
+- Should support `rows()`, `cols()`, `operator()(i, j)`, and `value_type`.
+
+- Matrix types from this folder should **not depend** on `ops/` or `backend/`, only on `types`, `layout`, or `allocator` if necessary.
+

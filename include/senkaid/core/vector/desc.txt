@@ -1,0 +1,44 @@
+[Directory]: include/senkaid/core/vector
+
+[Purpose]:
+This folder defines the main 1D vector abstraction, forming the foundation for dot products, linear systems, eigenvectors, and many higher-level algorithms. It supports both static-size and dynamic-size vectors with shared logic and consistent interface.
+
+[Expected files]:
+
+- vector.hpp
+  - Defines the core `Vector<T, N>` template class for statically sized vectors.
+  - Provides methods: `operator[](i)`, `size()`, `data()`, `norm()`, `dot(other)`, etc.
+  - Designed for fast, stack-allocated operations when N is small and known.
+
+- vector_dynamic.hpp
+  - Defines dynamic-size `Vector<T>` version.
+  - Uses heap allocation for internal buffer, size stored at runtime.
+  - Compatible with dynamic matrix rows/columns or user-defined vectors.
+
+- vector_base.hpp
+  - CRTP base class for both static and dynamic versions.
+  - Unifies interface and enables templated algorithms without duplication.
+  - Common methods like `sum()`, `argmax()`, `slice()` can be defined here.
+
+- vector_traits.hpp
+  - Defines `is_vector<T>`, `vector_size<T>`, and overload resolution helpers.
+  - Useful for type introspection, SFINAE, and dispatching.
+
+- vector_storage.hpp
+  - Internal memory layout and alignment logic, optionally reused in other containers.
+  - May also manage SIMD alignment and interfacing with `backend/simd`.
+
+[Optional files]:
+
+- vector_math.hpp
+  - Includes overloaded operators: `+`, `-`, `*`, `/`, scalar multiplication/division.
+  - May be used separately for header-only builds or disabled in low-level builds.
+
+- vector_debug.hpp
+  - Provides printing, pretty formatting, or bounds-checking accessors.
+
+[Notes]:
+- Static and dynamic vectors should interoperate cleanly.
+- SIMD and GPU acceleration hooks are expected to be connected via `backend/`.
+- The design should avoid excessive abstraction penalties (no virtual calls, avoid std::vector if not needed).
+- Future extensions may include complex vector types or quaternion support.

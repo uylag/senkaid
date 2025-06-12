@@ -1,0 +1,42 @@
+[Directory]: include/senkaid/core/layout
+
+[Purpose]:
+This folder defines abstractions and policies for memory layout in matrix, vector, and tensor storage.
+It handles row-major and column-major access, stride calculation, and memory offset logic.
+These components are essential for correctly interpreting flat buffers as multidimensional data.
+
+[Expected files]:
+
+- layout_policy.hpp
+  - Defines enum classes or tag types for `RowMajor`, `ColumnMajor`, `CustomStride`, etc.
+  - Used in templates to select the memory layout at compile-time or runtime.
+  - Acts as the central point of layout decision for Matrix and Tensor types.
+
+- stride.hpp
+  - Implements logic for computing row/column strides based on shape and layout policy.
+  - Contains helpers like `get_stride(i)`, `linear_index(i,j,stride)`.
+  - Supports both contiguous and custom-strided storage (e.g. views, slices).
+
+- offset.hpp
+  - Provides offset computation utilities for accessing elements inside views or submatrices.
+  - Used in Block, Slice, and Transpose views to map logical indices to physical positions.
+  - May support broadcasting-aware index translation.
+
+- layout_traits.hpp
+  - Compile-time checks like `is_row_major<T>`, `is_column_major<T>`, `has_contiguous_layout<T>`.
+  - Used to enable layout-specific optimizations (e.g. SIMD-vectorized rows).
+
+[Optional files]:
+
+- layout_utils.hpp
+  - Generic helper functions for debugging, layout comparison, and visualization.
+
+- layout_hash.hpp
+  - Implements hashing for layout descriptors, useful for caching kernels or tensor shapes.
+
+[Notes]:
+- Layout code should never allocate or own memory — it only describes how memory is interpreted.
+- Must integrate tightly with `Matrix`, `Vector`, `Tensor`, `View`, and `SIMD` components.
+- Future versions may extend this to `TensorLayout` with N-dimensional generalization.
+
+

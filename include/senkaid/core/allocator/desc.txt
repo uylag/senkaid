@@ -1,0 +1,42 @@
+[Directory]: include/senkaid/core/allocator
+
+[Purpose]:
+This folder provides custom memory allocation utilities for matrices, vectors, and tensors. 
+Its main goal is to support aligned allocation for SIMD and GPU-friendly layouts, as well as internal memory pooling for performance.
+
+[Expected files]:
+
+- aligned_alloc.hpp
+  - Contains functions for aligned memory allocation and deallocation.
+  - Replaces standard `new`/`delete` or `malloc/free` with alignment-aware versions.
+  - Used by dynamic Matrix and Vector implementations (e.g., AVX-512, HIP/CUDA).
+
+- allocator_traits.hpp
+  - Defines allocator concept checks and default allocator policies.
+  - Determines at compile time whether an allocator meets the requirements for senkaid containers.
+  - Also defines reusable traits like `is_aligned_allocator<T>`.
+
+- memory_block.hpp
+  - Low-level abstraction over a block of memory (pointer + capacity + alignment).
+  - Provides RAII ownership and manual control of lifecycle (for `MatrixDynamic` or `Tensor`).
+
+- buffer_pool.hpp
+  - Optional memory pool system for reusing allocated blocks.
+  - Helps minimize dynamic allocations in hot loops or GPU kernels.
+  - Can be disabled via compile-time flags (e.g. `SENKAID_DISABLE_POOLING`).
+
+[Optional files]:
+
+- stack_alloc.hpp
+  - Provides fixed-size or stack-based allocators for very small matrices/vectors.
+  - Useful for embedded systems or known-at-compile-time shapes.
+
+- gpu_alloc.hpp
+  - Interface for CUDA / HIP memory allocation (e.g. `cudaMalloc`, `hipMalloc`).
+  - Wrapped for compatibility with backend dispatch.
+
+[Notes]:
+- All allocators must return memory aligned to at least 32 bytes (for AVX) or 64 bytes (for AVX-512).
+- These files are only concerned with raw memory, not construction/destruction of objects.
+- Aligned allocation is critical for SIMD correctness and should be treated as a first-class constraint.
+

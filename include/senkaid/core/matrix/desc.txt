@@ -1,0 +1,49 @@
+[Directory]: include/senkaid/core/matrix
+
+[Purpose]:
+This folder contains the core implementation of the Matrix<T, Rows, Cols> type in both static and dynamic forms. It defines the memory layout, allocation strategies, and low-level matrix operations. All other parts of the library rely on this core structure.
+
+[Expected files]:
+
+- matrix_base.hpp
+  - Base CRTP class that defines shared interface for Matrix<T, R, C> types.
+  - Provides interface functions like operator(), rows(), cols(), size(), and shape().
+  - Used to enable expression templates and compile-time dispatch.
+
+- matrix_static.hpp
+  - Implements statically sized matrix: Matrix<T, Rows, Cols> with Rows and Cols known at compile time.
+  - Stores data as std::array or raw buffer, allowing full constexpr usage.
+  - Optimized for stack allocation and aggressive inlining.
+
+- matrix_dynamic.hpp
+  - Implements dynamically sized matrix: Matrix<T, -1, -1> or mixed-static types.
+  - Uses heap allocation via custom allocator from core/allocator/.
+  - Supports resizing, reallocation, and runtime dimension checks.
+
+- matrix_traits.hpp
+  - Compile-time type traits: is_matrix<T>, is_static_matrix<T>, is_dynamic_matrix<T>.
+  - Used heavily in concepts, templates, and backend dispatch.
+
+- matrix_storage.hpp
+  - Handles raw memory management (pointer, capacity, alignment).
+  - Abstracts differences between static and dynamic storage.
+  - Used internally by matrix_static and matrix_dynamic.
+
+- matrix_fwd.hpp
+  - Forward declarations for Matrix<T, R, C> and related types.
+  - Used to break include cycles and speed up compilation.
+
+[Optional files]:
+
+- matrix_shape.hpp
+  - Encapsulates compile-time and runtime shape introspection logic.
+  - Useful for generic code or future tensor support.
+
+- matrix_debug.hpp
+  - Adds helper functions like print_matrix(), debug_info(), etc.
+
+[Notes]:
+- All matrix types must support integration with views/, ops/, and backend/.
+- Alignment and layout policy may be later extracted into matrix_policy.hpp if needed.
+- This directory should remain pure: no algorithms or math — only data structures.
+
