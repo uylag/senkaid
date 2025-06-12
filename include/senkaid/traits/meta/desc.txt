@@ -1,0 +1,69 @@
+[Directory]: include/senkaid/traits/meta
+
+[Purpose]:
+This folder provides **fundamental compile-time utilities** for meta-programming and trait construction. These are low-level building blocks used across the entire trait system to enable SFINAE, concept resolution, type dispatch, and property introspection.
+
+These are not tied to mathematics directly, but rather to generic **type logic**.
+
+[Expected files]:
+
+- type_list.hpp  
+  - Defines a basic variadic type list:
+    ```cpp
+    template<typename... Ts> struct type_list {};
+    ```
+  - Used to implement compile-time operations like type filtering, merging, or flattening.
+
+- is_specialization.hpp  
+  - Checks if a given type is an instance of a specific template:
+    ```cpp
+    template<typename T, template<typename...> class Template>
+    struct is_specialization_of : std::false_type {};
+
+    template<template<typename...> class Template, typename... Args>
+    struct is_specialization_of<Template<Args...>, Template> : std::true_type {};
+    ```
+
+- enable_if_ext.hpp  
+  - Extensions over `std::enable_if`, e.g. `enable_if_all`, `enable_if_any`.
+  - Cleaner control over overload resolution.
+
+- detector.hpp  
+  - Core "detection idiom" utility, for safe detection of expressions:
+    ```cpp
+    template<class Default, class AlwaysVoid,
+             template<class...> class Op, class... Args>
+    struct detector { using value_t = std::false_type; using type = Default; };
+    ```
+
+- decay_ext.hpp  
+  - Smart decay helpers (e.g., to remove `cvref`, pointer-to-member qualifiers).
+  - Helpful for generic templates and type normalization.
+
+[Optional files]:
+
+- index_sequence_ext.hpp  
+  - Tools for working with `std::index_sequence`, extended utilities like `make_reverse_index_sequence`.
+
+- constexpr_utils.hpp  
+  - Small constexpr tools like compile-time max, min, pow, etc.
+
+[Integration]:
+
+- Used by:
+  - `math_traits`, `matrix_traits`, `engine/*`, `ops/*`
+  - All CRTP base interfaces that require static dispatch
+  - Tag dispatchers and expression templates
+
+[Design Notes]:
+
+- All utilities are `constexpr`-friendly and `noexcept`.
+- Designed to be header-only, zero-overhead at runtime.
+- Forms the **foundation layer** of all trait logic in senkaid.
+
+[Future]:
+
+- `concept_map<>` or `type_class<>` emulation for advanced constraints
+- C++26 static reflection adaptation
+- Integration with `meta::for_each_type` for tuple-like dispatch
+

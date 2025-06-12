@@ -1,0 +1,71 @@
+[Directory]: include/senkaid/views/block
+
+[Purpose]:
+This folder implements **block views** — lightweight, non-owning windows over subregions of matrices or tensors (i.e. slices, tiles, blocks). These views enable localized computation, cache efficiency, and composable tensor ops **without copying data**.
+
+---
+
+[Expected files]:
+
+- block_view.hpp  
+  - Core view abstraction:
+    ```cpp
+    template<typename T>
+    class BlockView {
+      T* data;
+      std::size_t row_offset, col_offset;
+      std::size_t rows, cols;
+    };
+    ```
+  - Allows slicing: `BlockView A = full_matrix.block(2, 3, 4, 4);`
+  - Supports both const and mutable variants.
+
+- block_traits.hpp  
+  - Compile-time traits for block-like behavior:
+    - `is_block_view<T>`
+    - `block_shape<T>`
+    - stride, offset, aliasing guarantees
+
+- block_interface.hpp  
+  - Common interface for all block-like types (e.g. mutable, const, tensor).
+  - May define accessors (`at(i, j)`), shape metadata, etc.
+
+---
+
+[Optional files]:
+
+- block_expression.hpp  
+  - Lazy expression template wrapper for block operations.
+  - Enables optimization like fusing: `A.block(...) + B.block(...)`.
+
+- block_iterators.hpp  
+  - Custom iterator types for block-wise traversal with correct strides.
+
+- block_bounds.hpp  
+  - Validity checks, boundary clamping, padding logic.
+
+---
+
+[Integration]:
+
+- Used in:
+  - `core/matrix`, `core/tensor` to support `.block(...)` API.
+  - `ops/linalg`, `ops/reduce`, `ops/transforms` to operate on submatrices efficiently.
+- View does **not own** memory — relies on parent matrix lifetime.
+
+---
+
+[Notes]:
+
+- Should support nested views: `A.block(...).block(...)`
+- Read/write safety enforced via `const`-qualified templates
+- Zero-allocation: only pointer + offset arithmetic
+
+---
+
+[Future]:
+
+- GPU-compatible block views (device pointer abstraction)
+- Interoperability with `std::span`, `Eigen::Block`, `xt::view`
+- Broadcasting block views over batched matrices
+

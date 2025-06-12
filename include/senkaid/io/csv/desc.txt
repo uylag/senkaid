@@ -1,0 +1,73 @@
+[Directory]: include/senkaid/io/csv
+
+[Purpose]:
+This folder implements **CSV (Comma-Separated Values) import/export utilities** for senkaid data structures. While slower and less compact than binary formats, CSV is widely used for human-readable data exchange and interoperability with Excel, pandas, R, etc.
+
+Use cases:
+- Quick inspection or export of small matrices/tensors.
+- Logging or output for spreadsheets.
+- Easy integration with tabular datasets in ML.
+
+[Expected files]:
+
+- csv_reader.hpp  
+  - Parses `.csv` files and loads into `Matrix<T>` or `Tensor<T>`.
+  - Features:
+    - Configurable delimiter (`,`, `;`, `\t`)
+    - Optional header row parsing
+    - Auto type inference or forced template type
+    - Error handling for malformed rows
+
+- csv_writer.hpp  
+  - Saves `Matrix<T>` or other containers to `.csv`.
+  - Features:
+    - Precision control (e.g., 6 digits after decimal)
+    - Custom delimiters
+    - Optional row/column labels
+
+- csv_config.hpp  
+  - Global and per-call config flags:
+    - Default separator
+    - Quote behavior
+    - Output locale / decimal point
+
+[Optional files]:
+
+- csv_stream.hpp  
+  - Allows streaming read/write from/to `std::istream` / `std::ostream`.
+  - Useful for piping CSVs or reading from network/file buffers.
+
+- csv_traits.hpp  
+  - Maps type to CSV serialization logic.
+    ```cpp
+    template<typename T>
+    struct csv_traits {
+      static std::string to_string(T);
+      static T from_string(const std::string&);
+    };
+    ```
+
+- csv_utils.hpp  
+  - Helper utilities:
+    - Escaping/unescaping fields
+    - Tokenizing rows
+    - Trimming whitespace
+
+[Integration]:
+
+- Used in `examples/basic`, `engine/train` (logging), `tests/benchmark` (measuring outputs).
+- Optional fallback if `io/binary` is disabled.
+- Suitable for unit testing due to human-readability.
+
+[Design Notes]:
+
+- Avoid large allocations per-line; use fixed buffers when possible.
+- Separate concerns: parsing, formatting, buffering.
+- If needed, multithreaded I/O via `backend/parallel`.
+
+[Future]:
+
+- CSV validator tool (checks for malformed inputs).
+- CSV schema exporter (for documentation).
+- Integration with popular formats like TSV, WSV, SSV.
+

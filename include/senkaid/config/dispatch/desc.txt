@@ -1,0 +1,79 @@
+[Directory]: include/senkaid/config/dispatch
+
+[Purpose]:
+This folder defines compile-time and runtime dispatching mechanisms for selecting optimal execution backends (SIMD, CPU, GPU, multi-threaded, etc.) depending on hardware, compiler flags, or user preferences.
+
+The goal is to allow the library to **route high-level operations to the most efficient backend** transparently, using a flexible yet controllable dispatching infrastructure.
+
+[Expected files]:
+
+- dispatch_config.hpp
+  - Master configuration header for dispatch logic.
+  - Defines enums or macros for backend selection:
+    ```cpp
+    enum class BackendType { CPU, SIMD, CUDA, ROCM, SYCL };
+    inline constexpr BackendType DefaultBackend = BackendType::SIMD;
+    ```
+
+- dispatch_tags.hpp
+  - Tag types and dispatch marker structs used in overloads and template specialization:
+    ```cpp
+    struct cpu_tag {};
+    struct simd_tag {};
+    struct cuda_tag {};
+    ```
+
+- dispatch_selector.hpp
+  - Core logic to determine the best backend at compile-time or runtime.
+  - Example:
+    ```cpp
+    template <typename T>
+    constexpr auto select_backend() {
+        #if defined(SENKAID_USE_CUDA)
+          return cuda_tag{};
+        #elif defined(SENKAID_USE_SIMD)
+          return simd_tag{};
+        #else
+          return cpu_tag{};
+        #endif
+    }
+    ```
+
+- dispatch_macros.hpp
+  - Useful macros to simplify dispatch logic and unify error handling:
+    ```cpp
+    #define SENKAID_DISPATCH_BACKEND(TYPE, ...) \
+      switch (TYPE) { \
+        case BackendType::CPU:   __VA_ARGS__(cpu_tag{}); break; \
+        case BackendType::SIMD:  __VA_ARGS__(simd_tag{}); break; \
+        ...
+      }
+    ```
+
+- dispatch_runtime.hpp
+  - (Optional) runtime dispatch logic:
+    - Detects AVX/SIMD, CUDA, HIP support using compiler intrinsics
+    - Allows dynamic backend switching
+
+- dispatch_registry.hpp
+  - (Optional) registry for custom backends or user-defined dispatch policies.
+  - Can be used for plugin systems or external accelerator support.
+
+[Integration]:
+
+- Used across `ops/*`, `engine/*`, and `backend/*` to abstract backend selection.
+- Interfaces with `config/target` to match available hardware.
+- Automatically falls back to CPU or scalar paths if no optimized path is available.
+
+[Notes]:
+
+- Keeps dispatch logic **isolated from algorithms**, improving modularity and readability.
+- Helps ensure **zero-overhead abstractions** where compile-time dispatch is possible.
+- Runtime dispatch should be guarded to avoid performance regressions unless necessary (e.g., dynamic hardware detection).
+
+[Future]:
+
+- Add support for JIT-based dynamic code loading (e.g., via LLVM).
+- Allow runtime user override (e.g., env var `SENKAID_BACKEND=cuda`).
+- Explore integration with `std::execution::par_unseq` for C++20-native dispatching.
+

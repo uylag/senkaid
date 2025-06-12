@@ -1,0 +1,83 @@
+[Directory]: include/senkaid/views/transpose
+
+[Purpose]:
+This folder contains **non-owning transposed views** of tensors, matrices, and vectors — providing **efficient reordering of dimensions or axes without copying**.
+
+These transpositions are essential for:
+- Enabling column-major vs. row-major compatibility
+- Performing BLAS operations correctly
+- Preparing data for cache-friendly access or SIMD
+- Supporting broadcasting and Einstein notation logic
+
+---
+
+[Expected files]:
+
+- transpose_view.hpp  
+  - Core view structure:
+    ```cpp
+    template<typename T, std::size_t Rank>
+    class TransposeView {
+      T* data;
+      std::array<std::size_t, Rank> permuted_shape;
+      std::array<std::size_t, Rank> permuted_stride;
+      std::array<std::size_t, Rank> permutation;
+    };
+    ```
+  - Applies permutation to both shape and stride.
+  - Enables lazy transpose access via `A.t()` or `transpose(A)`.
+
+- transpose_traits.hpp  
+  - Compile-time helpers for checking transposability, layout inference:
+    - `is_transpose_view<T>`
+    - `default_transpose_perm<T>`
+    - `transpose_rank<T>`
+
+- transpose_utils.hpp  
+  - Functions for computing new strides and layouts after permutation:
+    - `apply_permutation()`
+    - `inverse_permutation()`
+    - `is_identity_perm()`
+
+---
+
+[Optional files]:
+
+- transpose_expr.hpp  
+  - Expression templates for deferred transpose:
+    - Enables fusing transpose + operation without intermediate memory.
+    - E.g. `transpose(A) + B` becomes a loop with swapped indices.
+
+- transpose_flags.hpp  
+  - Support for marking memory as logically transposed (useful for memory ordering).
+
+---
+
+[Integration]:
+
+- Used in:
+  - `core/matrix`, `core/tensor`, `ops/linalg`, `backend/simd`
+  - Engine modules like `optimize`, `train`, and GPU/CPU kernels
+- Can wrap other views:
+    ```cpp
+    transpose(slice(A, 0, 3, 1));
+    ```
+- Fully composable with other views (e.g., slicing a transpose of a block)
+
+---
+
+[Notes]:
+
+- Must **not copy data** — only remap stride/shape with permutation logic.
+- For rank-2, it is simple row↔col swap; for higher-rank — arbitrary axis reordering.
+- Always verify stride integrity after permutation to avoid undefined behavior.
+
+---
+
+[Future]:
+
+- Integration with GPU memory layouts (e.g., cudnnTensorFormat)
+- Support for transpose fusion in JIT/compiler backends
+- Autodiff-aware transposition in training pipeline (∂f(AT)/∂A = transpose(∂f/∂AT))
+
+

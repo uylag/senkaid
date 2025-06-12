@@ -1,0 +1,91 @@
+[Directory]: include/senkaid/ops/transforms
+
+[Purpose]:
+This folder provides **transformational operations** on vectors, matrices, and tensors — operations that **modify data layout, structure, or values without changing the underlying semantics**. These are distinct from elementwise or reduction operations and are often used in preprocessing, neural network layers, and optimization pipelines.
+
+Examples include reshaping, padding, slicing, flipping, normalizing, etc.
+
+[Expected files]:
+
+- reshape.hpp  
+  - Changes the shape of a tensor without changing its data (when possible).
+  - Preserves memory layout if contiguous.
+  - Example:
+    ```cpp
+    auto y = reshape(x, new_shape);
+    ```
+
+- transpose.hpp  
+  - Permutes the axes of a tensor.
+  - Specialized variants for 2D (matrix) transpose and general N-D.
+  - Integrates with SIMD/GPU for 2D blockwise transpose.
+
+- permute.hpp  
+  - Generalization of `transpose` to arbitrary axes:
+    ```cpp
+    auto y = permute(x, {0, 2, 1});
+    ```
+
+- flip.hpp  
+  - Reverses tensor along one or more dimensions.
+  - Used in convolutions, data augmentation.
+
+- pad.hpp  
+  - Pads tensor with zeros or custom values.
+  - Supports symmetric, constant, and reflection padding.
+
+- normalize.hpp  
+  - Normalize data:
+    - min-max scaling
+    - L2-normalization
+    - z-score standardization
+
+- clip.hpp  
+  - Element-wise clipping to range `[min, max]`.
+  - Used in numerical stability, outlier control.
+
+- cast.hpp  
+  - Converts between data types (float → int, double → float, etc.).
+  - May include safety checks, saturation logic.
+
+- squeeze.hpp / unsqueeze.hpp  
+  - Remove or add singleton dimensions (i.e., shape changes like (1, N, 1) → (N))
+
+[Optional files]:
+
+- transform_pipeline.hpp  
+  - Compose multiple transforms:
+    ```cpp
+    auto y = pipeline(x)
+               .reshape(...)
+               .normalize(...)
+               .transpose(...)
+               .finalize();
+    ```
+
+- transform_view.hpp  
+  - Non-owning view-based transforms (like NumPy views).
+  - Avoids copying where possible.
+
+[Integration]:
+
+- Heavily used in:
+  - `engine/train` for input/output layers
+  - `backend/cuda`, `backend/simd` for optimization
+  - `views/` folder for slice-based implementations
+  - `core/layout` and `core/tensor`
+
+[Design Notes]:
+
+- Must minimize copies — views or lazy transforms should be preferred.
+- Transforms should compose.
+- All operations should preserve shape and type metadata unless explicitly changed.
+- Avoid recomputation in chains — use caching where safe.
+
+[Future]:
+
+- Support lazy/eager switching
+- Optimize chain-of-transforms fusion (reshape → transpose → normalize → etc.)
+- Auto-layout-aware transforms for performance tuning
+- Add support for FFT-related transforms (real/complex)
+

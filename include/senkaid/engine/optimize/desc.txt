@@ -1,0 +1,80 @@
+[Directory]: include/senkaid/engine/optimize
+
+[Purpose]:
+This folder implements core **numerical optimization algorithms** that operate over matrices, vectors, and tensors. These are the backbone for AI model training, control systems, physics simulation, and numerical solvers for PDEs.
+
+It targets **gradient-based** and **gradient-free** methods with support for dense/sparse inputs and GPU acceleration when possible.
+
+[Expected files]:
+
+- gradient_descent.hpp
+  - Classic Gradient Descent (GD) and its variants (momentum, Nesterov).
+  - Template-based over `Matrix<T>` or `Tensor<T>`.
+  - Basic example:
+    ```cpp
+    template<typename Function, typename Gradient>
+    auto gradient_descent(Function f, Gradient grad, Vector<T> x0, OptConfig cfg);
+    ```
+
+- newton.hpp
+  - Newton’s method with Hessian computation or approximation.
+  - Used in constrained/unconstrained optimization.
+  - May fallback to Quasi-Newton (see `bfgs.hpp`).
+
+- bfgs.hpp
+  - Limited-memory BFGS (L-BFGS) for large-scale unconstrained optimization.
+  - Suited for neural nets, inverse problems, variational inference.
+
+- adam.hpp
+  - Adaptive Moment Estimation (ADAM) optimizer for deep learning.
+  - May include AMSGrad, AdamW variants.
+  - GPU-accelerated version can link to `backend/cuda`.
+
+- lbfgs.hpp
+  - Lightweight implementation of L-BFGS for memory-constrained scenarios.
+
+- optimize_config.hpp
+  - Unified struct `OptConfig` with:
+    - learning_rate
+    - max_iters
+    - tolerance
+    - verbose flag
+
+- constraints.hpp (optional)
+  - Implements box constraints, projection onto convex sets.
+  - Used in constrained variants of GD/Newton.
+
+- scheduler.hpp (optional)
+  - Learning rate scheduling: exponential decay, cosine annealing, step schedule.
+
+[Optional files]:
+
+- autodiff_wrapper.hpp
+  - Lightweight forward/reverse-mode autodiff to enable training on user-defined functions.
+  - Integrates with gradient descent and Newton-type methods.
+
+- penalty.hpp
+  - Adds penalty functions (L1, L2, elastic net) for regularization.
+
+- stopping_criteria.hpp
+  - Functions to evaluate convergence: relative error, gradient norm, max iterations, etc.
+
+[Integration]:
+
+- `engine/train/` may use this folder to optimize neural nets, linear models, and embeddings.
+- `ops/linalg` may use this for matrix inverse via optimization.
+- GPU support optional via dispatch to `backend/cuda`, `rocm_hip`.
+
+[Notes]:
+
+- Must support both row-major and col-major data layout.
+- Template over float, double, complex types.
+- Easily plug into generic `optimize(f, grad, x0, method::Adam)` interface.
+
+[Future]:
+
+- Add stochastic optimization (SGD, RMSProp).
+- Add support for constrained optimization (projected GD, barrier methods).
+- Add batch-mode and vectorized optimizers for GPU.
+
+

@@ -1,0 +1,87 @@
+[Directory]: include/senkaid/backend/rocm_hip
+
+[Purpose]:
+This folder provides GPU acceleration support for AMD GPUs via the **HIP (Heterogeneous-compute Interface for Portability)** API under the **ROCm (Radeon Open Compute)** platform.
+
+It allows `senkaid` to compile the same GPU kernels for both NVIDIA (via CUDA) and AMD (via HIP) devices, ensuring **cross-vendor compatibility** and maximizing GPU utilization on diverse hardware.
+
+[Key Goals]:
+- Implement GPU kernels and infrastructure using HIP.
+- Support compile-time and runtime backend selection (ROCm vs. CUDA).
+- Seamless integration with CPU fallback and dispatch layers.
+
+[Expected files]:
+
+- hip_common.hpp
+  - Shared HIP includes, type definitions, device macros.
+  - Device-agnostic abstraction layer.
+  - Conditional macros like `SENKAID_HIP_CALL(...)` for error checking.
+
+- hip_kernels.hpp / .hip
+  - Definitions of HIP kernels for matrix/vector operations.
+  - Examples:
+    - matrix multiplication
+    - vector addition
+    - element-wise transforms
+
+- hip_context.hpp
+  - Manages HIP device state, memory allocator, streams, and events.
+  - Handles device selection, synchronization, and error recovery.
+
+- hip_dispatch.hpp
+  - Integration point with `backend/dispatch`, enabling runtime dispatch to HIP kernels.
+  - Template wrappers like:
+    ```cpp
+    template<typename T>
+    void matmul_hip(const T* A, const T* B, T* C, ...);
+    ```
+
+- hip_memory.hpp
+  - Utilities for HIP memory management:
+    - `hipMalloc`, `hipMemcpy`, `hipFree`
+    - Allocation tracking
+    - Device-to-host fallback
+
+[Optional]:
+
+- hip_allocator.hpp
+  - HIP device memory allocator for use with `senkaid::core::allocator`.
+
+- hip_math.hpp
+  - Fast math intrinsics: `__hadd`, `__hfma`, `__expf`, etc. for float16, bfloat16, and float32.
+
+- hip_config.hpp
+  - Compilation flags, version detection, architecture-specific macros.
+
+- hip_launcher.hpp
+  - Abstracts thread block/grid launch configuration:
+    ```cpp
+    dim3 threads(16, 16);
+    dim3 blocks((N + 15) / 16, (M + 15) / 16);
+    hipLaunchKernelGGL(kernel, blocks, threads, ...);
+    ```
+
+[Integration]:
+- Requires HIP-enabled compiler (e.g., `hipcc`) and ROCm runtime.
+- Integrates with CMake using:
+  ```cmake
+  find_package(HIP REQUIRED)
+  target_link_libraries(senkaid_backend_hip PUBLIC HIP::device)
+All HIP-enabled operations mirror those in backend/cuda, ensuring full symmetry.
+
+[Notes]:
+
+HIP is source-compatible with CUDA (via hipify), allowing most GPU kernels to be shared across backends.
+
+Important for users with AMD GPUs (especially on Linux systems).
+
+Must provide fallbacks for unsupported devices or older ROCm versions.
+
+[Future]:
+
+Support for mixed-precision (float16, bfloat16).
+
+Graph execution using hipGraphLaunch.
+
+Multi-GPU support using hipSetDevice, streams, and peer-to-peer memory.
+

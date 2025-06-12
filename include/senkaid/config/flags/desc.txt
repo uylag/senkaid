@@ -1,0 +1,99 @@
+[Directory]: include/senkaid/config/flags
+
+[Purpose]:
+This directory contains **preprocessor macros, feature toggles, and compile-time flags** that control the behavior, optimizations, and compatibility of the entire `senkaid` library.
+
+The goal is to **centralize all configuration macros** to avoid scattering `#ifdef` logic across codebase, and to make the library easily configurable for different environments, architectures, and feature sets.
+
+[Expected files]:
+
+- flags_common.hpp
+  - Defines basic macros that are always included.
+  - Example:
+    ```cpp
+    #define SENKAID_VERSION_MAJOR 0
+    #define SENKAID_VERSION_MINOR 1
+    #define SENKAID_VERSION_PATCH 0
+    #define SENKAID_VERSION_STRING "0.1.0"
+    ```
+
+- flags_compiler.hpp
+  - Detects compiler and defines flags accordingly:
+    ```cpp
+    #if defined(__clang__)
+      #define SENKAID_COMPILER_CLANG 1
+    #elif defined(__GNUC__)
+      #define SENKAID_COMPILER_GCC 1
+    #elif defined(_MSC_VER)
+      #define SENKAID_COMPILER_MSVC 1
+    #endif
+    ```
+
+- flags_platform.hpp
+  - Detects platform/OS:
+    ```cpp
+    #if defined(_WIN32)
+      #define SENKAID_PLATFORM_WINDOWS 1
+    #elif defined(__linux__)
+      #define SENKAID_PLATFORM_LINUX 1
+    #elif defined(__APPLE__)
+      #define SENKAID_PLATFORM_MAC 1
+    #endif
+    ```
+
+- flags_features.hpp
+  - Master list of enabled/disabled features:
+    ```cpp
+    #define SENKAID_ENABLE_SIMD 1
+    #define SENKAID_ENABLE_CUDA 0
+    #define SENKAID_ENABLE_HIP 0
+    #define SENKAID_ENABLE_EXPERIMENTAL_API 0
+    ```
+
+- flags_warning.hpp
+  - Flags for silencing or enabling specific warnings:
+    - Inline macros to disable/reenable warnings per compiler.
+    ```cpp
+    #define SENKAID_DISABLE_WARNING_CLANG(...) // ...
+    ```
+
+- flags_debug.hpp
+  - Debug toggles, asserts, and verbose logging switches.
+    ```cpp
+    #ifdef SENKAID_DEBUG
+      #define SENKAID_ASSERT(x) assert(x)
+    #else
+      #define SENKAID_ASSERT(x)
+    #endif
+    ```
+
+[Optional files]:
+
+- flags_abi.hpp
+  - Configure ABI compatibility (e.g., forcing small object optimization, size alignment).
+
+- flags_inline.hpp
+  - Control inlining policies across platforms:
+    ```cpp
+    #define SENKAID_FORCE_INLINE __attribute__((always_inline)) inline
+    ```
+
+[Integration]:
+
+- Included early in all translation units via `types.hpp` or `config.hpp`.
+- Enables fine-grained control of build system (CMake integration with `-DSENKAID_ENABLE_CUDA=ON` etc.).
+- Allows toggling performance features for benchmarking, debugging, or embedded deployment.
+
+[Notes]:
+
+- Helps isolate platform/compiler-specific logic.
+- Makes debugging, CI, and cross-platform support far easier.
+- Clear separation between **detection**, **definition**, and **use** of flags.
+
+[Future]:
+
+- Automate population of feature flags via CMake + `configure.hpp.in`.
+- Provide user-overridable config header for end-user tuning.
+- Support `#pragma once` style feature dispatch for upcoming C++ standards.
+
+

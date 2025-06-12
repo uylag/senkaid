@@ -1,0 +1,40 @@
+[Directory]: include/senkaid/backend/asm
+
+[Purpose]:
+This folder provides low-level, architecture-specific implementations of critical operations
+using hand-written inline assembly or external `.s`/`.S` files.
+It focuses on pushing hardware to the absolute limits in cases where compilers and intrinsics fail
+to generate optimal code, particularly for operations like matrix transpose, dot-product, or memory prefetching.
+
+[Expected files]:
+
+- transpose.asm / transpose.s
+  - Optimized assembly code for matrix transpose on specific architectures (e.g., x86_64, AArch64).
+  - Focus on cache prefetching, loop unrolling, minimal branching.
+
+- dot_product.asm / dot_product.s
+  - Hardware-level fused multiply-add (FMA) or vectorized dot product routines.
+  - May bypass register spilling that happens in C++.
+
+- memcpy_optimized.s / zero_fill.s
+  - Replacement for memcpy/memset in edge cases where alignment and small sizes matter.
+  - Useful for zero-initialization of small blocks (e.g., submatrices or vectors).
+
+- barrier.s / flush_cache.s
+  - Implements hardware-level barriers, cache flushes, or memory fences for synchronization across cores.
+
+- asm_dispatch.hpp
+  - Thin abstraction layer that dispatches to asm functions based on compile-time flags.
+  - May fall back to intrinsics or generic code if target architecture unsupported.
+
+[Notes]:
+- This layer is **optional** and architecture-specific; it should **not be enabled by default** in generic builds.
+- Assembly code should be conditionally compiled using CMake + target flags (e.g., `-march`, `-mtune`).
+- Aim for minimal coupling with core logic – keep APIs stable and wrap unsafe blocks tightly.
+- Support for both `.s` (AT&T syntax) and `.S` (preprocessed) files is expected.
+
+[Future]:
+- Support for AVX-512, SVE, RISC-V V extensions.
+- Cross-architecture benchmarking to decide whether asm actually outperforms SIMD intrinsics.
+- Optional integration with backend/cuda and backend/rocm_hip for interop (e.g. asm stubs for launching GPU ops).
+

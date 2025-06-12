@@ -1,0 +1,75 @@
+[Directory]: include/senkaid/views/flatten
+
+[Purpose]:
+This folder provides **flattening views** — one-dimensional, contiguous or strided representations of multi-dimensional arrays (vectors, matrices, tensors). The goal is to enable:
+- Element-wise iteration and manipulation (e.g. reduction, copy, transform)
+- Dense memory access patterns
+- Expression template flattening for kernel fusion
+
+Flattening views **do not copy data**; they provide a different logical interface over the same memory.
+
+---
+
+[Expected files]:
+
+- flatten_view.hpp  
+  - Main class for flattening view:
+    ```cpp
+    template<typename T>
+    class FlattenView {
+      T* data;
+      std::size_t size;
+      std::size_t stride; // = 1 for contiguous
+    };
+    ```
+  - Constructed from matrices, tensors, nested views.
+  - Supports `operator[](i)`, `at(i)`, `begin()`, `end()`.
+
+- flatten_traits.hpp  
+  - Static traits for flattenable objects:
+    - `is_flattenable<T>`
+    - `flatten_rank<T>`
+    - Checks for contiguity, linear stride, dimension collapsing rules.
+
+- flatten_interface.hpp  
+  - Generic interface definition for all flatten-compatible structures.
+  - Helps standardize integration with iterators and views.
+
+---
+
+[Optional files]:
+
+- flatten_expression.hpp  
+  - Lazy evaluation wrapper for flattened expressions (e.g. `A.flatten() + B.flatten()`).
+  - Useful for optimizing kernels across memory layouts.
+
+- flatten_iterators.hpp  
+  - Custom random-access iterators for flattened ranges.
+  - May support stride skipping, vectorized chunks.
+
+---
+
+[Integration]:
+
+- Works with:
+  - `core/matrix`, `core/tensor`, `core/vector`
+  - `ops/reduce`, `ops/transforms`, `ops/logical`, etc.
+- Often used before reduction or scatter/gather
+- Can simplify interfacing with external APIs expecting 1D memory (e.g., cuBLAS, ROCm kernels)
+
+---
+
+[Notes]:
+
+- Flattening does **not** guarantee contiguity (must check stride).
+- Supports views of views (e.g., flatten(block(...))).
+- Can be used to expose internal layouts for debugging or IO.
+
+---
+
+[Future]:
+
+- Flattening with element reorder (e.g., column-major to row-major)
+- GPU-compatible flattening with memory space awareness
+- Integration with standard range views (`std::ranges::view`)
+

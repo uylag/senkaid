@@ -1,0 +1,49 @@
+[Directory]: include/senkaid/backend/cpu
+
+[Purpose]:
+This folder provides the default CPU backend for all operations that are not explicitly GPU-accelerated
+or SIMD-specialized. It serves as a portable, baseline implementation of all mathematical and memory-heavy
+routines, prioritizing correctness, portability, and general performance.
+
+It is used as the default execution backend unless a more optimized backend (SIMD, CUDA, ROCm, etc.) is selected.
+
+[Expected files]:
+
+- matmul_cpu.hpp / .cpp
+  - Standard matrix multiplication (naïve and/or blocked).
+  - Cache-aware tiling and loop nesting for small-to-medium matrices.
+
+- dot_cpu.hpp
+  - Scalar implementation of dot product (with optional OpenMP parallelism).
+
+- reduce_cpu.hpp
+  - Generic CPU reduction kernels (sum, max, mean, etc.) for tensors/vectors.
+
+- transform_cpu.hpp
+  - Point-wise map and transform functions for tensors/vectors (e.g., `exp`, `log`, `relu`).
+
+- memory_cpu.hpp
+  - Memory management wrappers (e.g., aligned malloc, reallocation) for CPU context.
+
+- dispatch_cpu.hpp
+  - Entry point that routes high-level ops to CPU implementations.
+  - Often used via tag dispatch (`cpu_tag`, `backend::cpu::execute(...)`).
+
+- parallel_utils.hpp
+  - Optional support for thread-level parallelism (e.g., OpenMP or std::thread).
+  - CPU workload partitioning for large-scale ops.
+
+[Notes]:
+- Every function here should be cleanly isolated from SIMD/GPU assumptions.
+- If possible, CPU ops should be written in a modular way to allow automatic replacement by SIMD later.
+- Fallback behavior for older or unknown hardware should reside here.
+
+[Integration]:
+- Used as a fallback in `backend/dispatch`.
+- Often paired with `traits/properties` to determine when CPU fallback is appropriate.
+- Can be configured via `config/dispatch`.
+
+[Future]:
+- May later support runtime CPU feature detection (SSE2-only fallback, etc.).
+- Potential integration with `tbb` or `OpenMP` for better multicore CPU utilization.
+

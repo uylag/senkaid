@@ -1,0 +1,73 @@
+[Directory]: include/senkaid/io/binary
+
+[Purpose]:
+This folder contains all logic for **binary serialization, deserialization, and storage** of senkaid matrices, vectors, and tensors. The goal is **maximum performance and compactness**, supporting both raw dumps (e.g., `.bin`) and structured binary formats (e.g., `.npy`, `.npz`).
+
+Binary formats are essential for:
+- Fast load/save of large data.
+- Cross-language compatibility (e.g., NumPy, PyTorch).
+- Avoiding precision loss from textual formats like `.csv`.
+
+[Expected files]:
+
+- binary_base.hpp  
+  - Core definitions for binary encoding/decoding.
+  - Abstract interface for binary input/output streams.
+  - Type-erased or templated I/O logic for different dtypes.
+
+- binary_writer.hpp  
+  - Functions to save senkaid objects (`Matrix<T>`, `Tensor<T>`, etc.) to binary files.
+  - Can include optional metadata headers (versioning, shapes, layout).
+
+- binary_reader.hpp  
+  - Functions to load binary files into senkaid objects.
+  - Support raw formats or self-describing formats (e.g., `.npy`).
+
+- format_npy.hpp  
+  - Implements `.npy` format (NumPy-compatible).
+  - Reads/writes header + binary buffer.
+  - Enables Python↔C++ interoperability.
+
+- format_npz.hpp  
+  - Handles `.npz` format (zipped archive of `.npy` files).
+  - May depend on a minimal zip implementation.
+
+- binary_config.hpp  
+  - Global settings:
+    - Endianness
+    - Alignment constraints
+    - Float/integer encoding rules
+
+[Optional files]:
+
+- memory_dump.hpp  
+  - Serialize in-memory layout for debugging or checkpointing.
+  - Zero-copy dump/load with exact memory reproduction.
+
+- binary_traits.hpp  
+  - Maps types to format tags, byte sizes, alignment:
+    ```cpp
+    template<typename T>
+    struct binary_traits;
+    ```
+
+[Integration]:
+
+- Can be called from `engine/train` for checkpointing.
+- Used in Python bindings for saving models/data.
+- Backed by `config/flags` to enable/disable formats.
+- May fall back to `io/csv` if binary fails or not supported.
+
+[Design Notes]:
+
+- Avoid any runtime heap allocations during I/O (if possible).
+- Provide both synchronous and asynchronous APIs.
+- Ensure compatibility with common ML ecosystems (NumPy, Torch).
+- Abstract `std::ofstream`/`std::ifstream` to allow memory-mapped or custom I/O backends.
+
+[Future]:
+
+- Support Protobuf/FlatBuffers/Cap’n Proto for structured binary I/O.
+- Streaming mode for large files (chunked I/O).
+- Add compression support (zstd, lz4) with `#define` toggles.
+

@@ -1,0 +1,78 @@
+[Directory]: include/senkaid/traits/properties
+
+[Purpose]:
+This folder defines **compile-time properties** and **semantic classifications** for mathematical types (matrix, vector, tensor, etc.).  
+It answers questions like:  
+- "Is this type a matrix?"  
+- "Is it dense, sparse, symmetric, triangular?"  
+- "Is it immutable, broadcastable, resizable?"
+
+These traits help optimize algorithms, enable static dispatch, and enforce correctness during compilation.
+
+---
+
+[Expected files]:
+
+- is_matrix.hpp  
+  - `true_type` if type derives from `MatrixBase<>`, `false_type` otherwise.  
+    Used in CRTP and static checks.
+
+- is_vector.hpp  
+  - Same idea, but for vectors (e.g. derived from `VectorBase<>`).
+
+- is_tensor.hpp  
+  - Detects general tensor structures (3D+), used for future extension.
+
+- is_dense.hpp / is_sparse.hpp  
+  - Used to statically differentiate between dense and sparse containers.  
+  - Enables algorithm specialization at compile-time.
+
+- is_mutable.hpp  
+  - Whether the object allows mutation (e.g. `resize()`, `.set()`).
+  - Used to restrict algorithms like in-place ops only to mutable types.
+
+- is_expression.hpp  
+  - For lazy evaluation systems (expression templates).
+  - Helps determine if an object is a temporary/lazy wrapper or an actual data holder.
+
+- is_broadcastable.hpp  
+  - Checks if a type supports broadcasting to larger shapes.
+  - Enables advanced shape inference and broadcasting in `ops/broadcast`.
+
+---
+
+[Optional files]:
+
+- is_square.hpp  
+  - `true_type` for NxN matrices.
+
+- is_symmetric.hpp / is_triangular.hpp  
+  - Enables optimized BLAS-level algorithms (e.g., `dsyrk`, `trmm`, `trsv`).
+
+- is_constexpr_evaluable.hpp  
+  - Determines whether a function or object can be used in `constexpr` contexts.
+
+- has_shape.hpp  
+  - Detects presence of `.shape()`, `.rows()`, `.cols()`.
+
+---
+
+[Integration]:
+
+- Used across:
+  - `ops/linalg`, `backend/*`, `engine/*`
+  - Core algorithm dispatch
+  - Static assertions in user code (`static_assert(is_matrix<T>::value, ...)`)
+  - Overload selection and SFINAE resolution
+
+---
+
+[Design Notes]:
+
+- Works via trait specializations and tag-based dispatch.
+- Type safety without runtime cost.
+- Extensible via template specializations or user-facing tags:
+  ```cpp
+  template<>
+  struct is_mutable<MyMatrix> : std::true_type {};
+

@@ -1,0 +1,64 @@
+[Directory]: include/senkaid/backend/dispatch
+
+[Purpose]:
+This folder is responsible for **runtime or compile-time selection** of the appropriate backend (CPU, SIMD, CUDA, ROCm, etc.) 
+based on the current execution context, hardware availability, and configuration flags.
+
+It serves as a central gateway that dynamically dispatches high-level mathematical operations to the best-suited backend 
+implementation, abstracting away low-level details from the user and the frontend.
+
+[Expected files]:
+
+- dispatch_traits.hpp
+  - Compile-time traits and concepts to identify supported backends for given types or platforms.
+  - Example: `is_backend_supported<T, backend::cuda>`, `backend_priority_order<T>`.
+
+- backend_selector.hpp
+  - Defines default backend selection logic.
+  - E.g., prefer CUDA if available, then ROCm, then SIMD, then CPU.
+  - May support tag-based dispatch (`cpu_tag`, `cuda_tag`, etc.).
+
+- dispatch_macros.hpp
+  - Helper macros to simplify writing dispatchable operations.
+  - Example:
+    ```cpp
+    SENKAID_DISPATCH_BACKEND(matrix_multiply, A, B, C);
+    ```
+
+- registry.hpp
+  - Optional runtime registry of backend availability and capability.
+  - Can be queried to determine what backends are compiled in, enabled, or detected at runtime.
+
+- dispatch_exec.hpp
+  - Contains actual template or function dispatchers that forward operations to the corresponding backend:
+    ```cpp
+    template <typename Backend>
+    void matmul_dispatch(const Matrix& A, const Matrix& B, Matrix& C);
+    ```
+
+- fallback.hpp
+  - Default fallback mechanisms for unsupported platforms or operations.
+  - E.g., fallback to CPU when GPU not present or memory allocation fails.
+
+[Optional]:
+
+- device_context.hpp
+  - Represents runtime execution environment (e.g., active CUDA stream, selected backend, device properties).
+
+- priority_policy.hpp
+  - User-configurable or hard-coded policy system for backend prioritization.
+
+[Notes]:
+- This system allows users to write high-level code (e.g. `matmul(A, B)`) without caring about backend internals.
+- Dispatch can be done at:
+  - compile-time (via template specialization, `constexpr if`)
+  - runtime (via registry or context detection)
+
+[Integration]:
+- Used by all `ops/` and `engine/` code that should run differently depending on platform capabilities.
+- Must be initialized early in programs if runtime detection is used.
+
+[Future ideas]:
+- Per-operation dispatch override (e.g., `matmul(A, B, force_cpu_tag)`).
+- Backend benchmarking to choose the fastest backend for a given matrix size.
+

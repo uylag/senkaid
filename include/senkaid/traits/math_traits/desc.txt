@@ -1,0 +1,71 @@
+[Directory]: include/senkaid/traits/math_traits
+
+[Purpose]:
+This folder defines **mathematical type traits and behavior descriptors** for compile-time introspection and dispatching in mathematical operations.
+
+These traits help the library **select optimized code paths**, **ensure type safety**, and **encode algebraic structure** (e.g., ring, field, matrix properties) directly in the type system.
+
+[Expected files]:
+
+- math_concepts.hpp  
+  - Defines core mathematical concepts via `constexpr` and `template` mechanisms:
+    ```cpp
+    template<typename T>
+    concept Field = requires(T a, T b) {
+      { a + b } -> std::same_as<T>;
+      { a / b } -> std::same_as<T>;
+    };
+    ```
+
+- scalar_traits.hpp  
+  - Traits for scalar types:
+    - `is_floating_point`, `is_complex`, `is_integer`
+    - `get_epsilon<T>()`, `get_zero<T>()`, `get_one<T>()`
+
+- matrix_traits.hpp  
+  - Compile-time properties of matrix-like types:
+    - `is_matrix<T>`, `rows<T>`, `cols<T>`, `is_square<T>`, `is_sparse<T>`
+    - Helpful for enabling matrix-specific optimizations or restricting templates.
+
+- tensor_traits.hpp  
+  - Generalized n-dimensional shape descriptors:
+    - `rank<T>`, `shape<T>`, `extent<T, N>`
+
+- algebraic_traits.hpp  
+  - Algebra-specific tags:
+    - `is_ring`, `is_field`, `has_inverse`, `is_commutative`
+    - Used to conditionally enable operations like `inv()`, `det()`.
+
+[Optional files]:
+
+- numeric_limits_ext.hpp  
+  - Extends `std::numeric_limits` to support SIMD or complex types.
+
+- autodiff_traits.hpp  
+  - Identifies and integrates automatic differentiation types (future feature).
+
+- promoted_type.hpp  
+  - Handles type promotion rules:
+    ```cpp
+    using promote = typename promote_type<float, double>::type; // double
+    ```
+
+[Integration]:
+
+- Used heavily in:
+  - `ops/linalg`, `ops/reduce`, `engine/solver`
+  - Template SFINAE or `requires` clauses
+  - Type dispatch systems (static and runtime)
+
+[Design Notes]:
+
+- Traits are pure header-only, with zero runtime overhead.
+- Provides generic meta-info for expression templates and backend selection.
+- Important for ensuring compile-time correctness of overloaded operations.
+
+[Future]:
+
+- Integration with `std::ranges` and C++23 concepts
+- Dynamic reflection hooks (e.g., for serialization or debugging)
+- Specialization for mixed-precision or GPU-native types
+

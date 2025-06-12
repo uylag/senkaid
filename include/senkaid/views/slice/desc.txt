@@ -1,0 +1,85 @@
+[Directory]: include/senkaid/views/slice
+
+[Purpose]:
+This folder provides **slice views** — non-owning windows into matrices, tensors, or vectors. These views allow efficient and flexible manipulation of subregions of data **without copying**. Slicing is fundamental for numerical libraries to:
+- Support expressions like `A(1:4, 2:5)`
+- Pass submatrices/tensors to functions
+- Enable in-place operations on data regions
+
+---
+
+[Expected files]:
+
+- slice_view.hpp  
+  - The core implementation of a generalized slice view:
+    ```cpp
+    template<typename T, std::size_t Rank>
+    class SliceView {
+      T* data;
+      std::array<std::size_t, Rank> shape;
+      std::array<std::size_t, Rank> stride;
+      std::array<std::size_t, Rank> offset;
+    };
+    ```
+  - Supports slicing for any rank: vector, matrix, or tensor.
+  - Provides `operator()`, `at()`, and iteration support.
+
+- slice_traits.hpp  
+  - Compile-time helpers:
+    - `is_slice_view<T>`
+    - `slice_rank<T>`
+    - Helpers for converting slices to views, extracting shape/strides
+
+- slice_utils.hpp  
+  - Utility functions for shape/stride calculation:
+    - `compute_strides(shape)`
+    - `normalize_slice(begin, end, step)`
+    - Support for negative indexing, ellipsis-like behavior
+
+---
+
+[Optional files]:
+
+- slice_interface.hpp  
+  - Base interface for defining what a “sliceable” object is.
+  - Enables generic `slice(A, args...)` usage.
+
+- slice_range.hpp  
+  - Range specification classes:
+    ```cpp
+    struct Slice { int start, stop, step; };
+    ```
+  - Supports Python-style slicing (with negative indices and strides).
+
+- slice_expr.hpp  
+  - Lazy slice expressions for combining slicing and computation in one pass.
+
+---
+
+[Integration]:
+
+- Used extensively in:
+  - `core/matrix`, `core/tensor`, `core/vector`
+  - `ops/ari`, `ops/reduce`, `engine/optimize`, etc.
+- Combined with `views/block`, `views/flatten`, `views/transpose`
+- Facilitates NumPy-like syntax:
+    ```cpp
+    auto subA = A.slice(1, 4).col(2, 6);
+    ```
+
+---
+
+[Notes]:
+
+- Slice views do **not own** memory — they must not outlive the source tensor.
+- Shape-stride-offset logic must be **100% accurate** to avoid invalid memory access.
+- Avoid heap allocation — slicing should be as fast as pointer math.
+
+---
+
+[Future]:
+
+- Strided slicing on GPU (with ROCm/CUDA support)
+- Multidimensional ellipsis slicing (`...`)
+- Unified slicing syntax compatible with Python frontends (via pybind11 or C API bindings)
+

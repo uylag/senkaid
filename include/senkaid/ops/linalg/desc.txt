@@ -1,0 +1,94 @@
+[Directory]: include/senkaid/ops/linalg
+
+[Purpose]:
+Provides core **linear algebra operations** used throughout Senkaid for matrix and tensor computations — includes everything from basic GEMM (matrix multiplication) to decompositions and solvers (if not offloaded to engine/).
+
+These operations are shape-aware, backend-dispatchable (SIMD/GPU), and optimized for both dense and sparse matrices.
+
+[Expected files]:
+
+- matmul.hpp  
+  - General matrix-matrix multiplication (GEMM), possibly dispatching to backend:
+    - `matmul(a, b)` → dense × dense
+    - `matmul_sparse(a, b)` → sparse × dense
+    - Supports:
+      - Blocking
+      - Parallelism
+      - SIMD / GPU delegation (via backend/)
+    - May include variants:
+      - `matmul_t(a, b)` (with transposed a)
+      - Batched matmul
+
+- matvec.hpp  
+  - Matrix-vector product (GEMV)
+    - `matvec(a, x)` → returns `a * x`
+    - Fused implementation for `M × N` × `N × 1`
+
+- dot.hpp  
+  - Inner product (dot product)
+    - `dot(a, b)` for:
+      - `Vector ⋅ Vector`
+      - `Matrix ⋅ Matrix` trace-like behavior
+
+- outer.hpp  
+  - Outer product `a ⊗ b`
+    - For building rank-1 matrices/tensors
+
+- norm.hpp  
+  - Norms and distance functions:
+    - `L1`, `L2`, `Frobenius`, `Max`
+    - Vector and matrix norms
+
+- inverse.hpp  
+  - Matrix inversion (explicit; discouraged unless needed)
+    - Delegates to `engine/decompose` (LU, Cholesky, etc.)
+
+- transpose.hpp  
+  - High-performance transposition for:
+    - General matrices
+    - SIMD-aligned blocks (used by backend/simd)
+    - Possibly batched tensors
+
+- triangular.hpp  
+  - Operations on triangular matrices:
+    - `triu`, `tril`
+    - Solve triangular systems (TRSM)
+
+- determinant.hpp  
+  - Computes determinant (via LU or other decomposition)
+
+[Optional files]:
+
+- solve.hpp  
+  - High-level wrapper for solving `Ax = b`, dispatching to `engine/solver`
+
+- kronecker.hpp  
+  - Kronecker (tensor) product for block-based algebra
+
+- hadamard.hpp  
+  - Elementwise (Hadamard) product `A .* B`
+
+- trace.hpp  
+  - Computes `trace(A)` = sum of diagonal elements
+
+- symmetrize.hpp  
+  - Forces matrix to be symmetric: `S = (A + Aᵀ) / 2`
+
+[Integration]:
+
+- `engine/decompose`, `engine/solver` use these low-level ops internally
+- All math goes through this layer unless performance-critical backend is triggered
+- User-facing API includes these for scripting + Python bindings
+
+[Design Notes]:
+
+- Fused kernels (e.g., `matmul + bias`) preferred when supported
+- Must support both row-major and column-major layouts
+- All linalg ops must respect memory alignment, view-stride logic, and potential broadcasting
+
+[Future]:
+
+- Support for block-sparse and low-rank matmul
+- Mixed-precision GEMM (FP16, BF16)
+- Integration with accelerator libraries like cuBLAS, rocBLAS, oneDNN
+

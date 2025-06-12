@@ -1,0 +1,105 @@
+[Directory]: include/senkaid/utils/macros
+
+[Purpose]:
+This folder contains **compile-time macros**, preprocessor helpers, and meta-switches used to control feature flags, portability settings, and lightweight type detection across the Senkaid library.
+
+Goals:
+- Centralize macro logic for maintainability and reuse
+- Hide platform/compiler-specific behavior behind portable interfaces
+- Support version detection, inlining, and function annotations
+
+---
+
+[Expected files]:
+
+- macros_common.hpp  
+  - Core macro definitions and guards used across the library:
+    ```cpp
+    #define SENKAID_INLINE inline __attribute__((always_inline))
+    #define SENKAID_NOINLINE __attribute__((noinline))
+    #define SENKAID_LIKELY(x)   __builtin_expect(!!(x), 1)
+    #define SENKAID_UNLIKELY(x) __builtin_expect(!!(x), 0)
+    ```
+
+- macros_compiler.hpp  
+  - Compiler/architecture-specific macro guards:
+    ```cpp
+    #ifdef _MSC_VER
+      #define SENKAID_FORCE_INLINE __forceinline
+    #elif defined(__GNUC__)
+      #define SENKAID_FORCE_INLINE inline __attribute__((always_inline))
+    #endif
+    ```
+
+- macros_version.hpp  
+  - Version and feature detection:
+    ```cpp
+    #define SENKAID_VERSION_MAJOR 0
+    #define SENKAID_VERSION_MINOR 1
+    #define SENKAID_VERSION_PATCH 0
+    #define SENKAID_VERSION_STR "0.1.0"
+    ```
+
+- macros_debug.hpp  
+  - Debug-specific macros, possibly reused in `utils/debug`:
+    ```cpp
+    #ifdef SENKAID_DEBUG
+      #define SENKAID_IF_DEBUG(...) __VA_ARGS__
+    #else
+      #define SENKAID_IF_DEBUG(...)
+    #endif
+    ```
+
+- macros_warning.hpp  
+  - Disable or manage compiler warnings:
+    ```cpp
+    #ifdef _MSC_VER
+      #define SENKAID_DISABLE_WARNINGS __pragma(warning(push, 0))
+    #else
+      #define SENKAID_DISABLE_WARNINGS _Pragma("GCC diagnostic push")
+    #endif
+    ```
+
+- macros_align.hpp  
+  - Alignment-related helpers:
+    ```cpp
+    #define SENKAID_ALIGN(N) alignas(N)
+    #define SENKAID_CACHELINE_ALIGN alignas(64)
+    ```
+
+---
+
+[Optional files]:
+
+- macros_attributes.hpp  
+  - Custom C++ attributes, e.g., `[[nodiscard]]`, `[[likely]]`, with fallbacks for older compilers.
+
+- macros_export.hpp  
+  - DLL/shared-lib export helpers for Windows/Linux:
+    ```cpp
+    #define SENKAID_EXPORT __attribute__((visibility("default")))
+    ```
+
+---
+
+[Integration]:
+
+- Used heavily in `core/`, `backend/`, `traits/`, `ops/`, and `debug/`
+- Helps maintain **compile-time portability** and **performance annotations**
+- Included indirectly through `types.hpp` or `config/dispatch`
+
+---
+
+[Notes]:
+
+- Everything must be **header-only** and platform-agnostic
+- Avoids repeating macros across components — clean separation of concerns
+
+---
+
+[Future]:
+
+- Integration with codegen/CLANG tools for macro tracing
+- Support for constexpr detection wrappers
+- Enable per-platform macro tuning from CMake
+

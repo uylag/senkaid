@@ -1,0 +1,78 @@
+[Directory]: include/senkaid/backend/simd
+
+[Purpose]:
+This folder contains **architecture-specific SIMD intrinsics** for high-performance vectorized CPU operations using instruction sets like SSE, AVX, AVX2, AVX-512 (x86), NEON, and SVE (ARM).
+
+The goal is to directly utilize low-level headers like `<immintrin.h>`, `<arm_neon.h>`, etc., to hand-optimize hot paths such as matrix multiplication, transpositions, convolutions, and reductions.
+
+[Expected files]:
+
+- simd_common.hpp
+  - Architecture-agnostic macros and utility definitions.
+  - Example:
+    ```cpp
+    #if defined(__AVX512F__)
+    #define SENKAID_SIMD_WIDTH 512
+    #elif defined(__AVX2__)
+    #define SENKAID_SIMD_WIDTH 256
+    #endif
+    ```
+
+- simd_traits.hpp
+  - Type-level metadata for SIMD register types:
+    - Register width
+    - Alignment requirements
+    - Available operations
+
+- simd_float.hpp
+  - SIMD wrappers for `float`:
+    - AVX/SSE implementations of `_mm256_add_ps`, `_mm256_mul_ps`, etc.
+    - Horizontal operations like `hadd`, `reduce_sum`
+    - Masked instructions (e.g., AVX512 masking)
+
+- simd_double.hpp
+  - Same as `simd_float.hpp`, but for `double` precision.
+
+- simd_int.hpp
+  - SIMD support for integer types (`int32_t`, `int64_t`)
+  - Often used for indexing, masks, bitwise logic, and filters.
+
+- simd_load_store.hpp
+  - Safe, portable wrappers for:
+    - `_mm256_load_ps` vs `_mm256_loadu_ps`
+    - aligned vs unaligned memory loads
+    - optional prefetching logic
+
+- simd_transpose.hpp
+  - Fast SIMD transposition functions for small blocks (4x4, 8x8, 16x16).
+  - Used in blocked GEMM kernels and convolution backends.
+
+[Optional files]:
+
+- simd_math.hpp
+  - Fast approximations of `exp`, `log`, `sigmoid`, `tanh`, `sqrt`
+  - Uses polynomial series (e.g., Pade, Estrin, minimax)
+
+- simd_complex.hpp
+  - Complex number arithmetic using SIMD:
+    - `float2`, `double2` abstractions
+    - SIMD fused multiply-add for real/imag channels
+
+- simd_reduction.hpp
+  - Vectorized reductions: `sum`, `min`, `max`, etc.
+  - Designed to minimize cache misses and false sharing
+
+[Integration]:
+
+- Invoked from `ops/linalg`, `ops/reduce`, `backend/cpu`, and `engine/optimize`
+- If SIMD is available, falls back to vectorized path.
+- Controlled via compiler flags:
+  - `-march=native`
+  - `-mavx`, `-mavx2`, `-mavx512f`, etc.
+
+[Notes]:
+
+- Requires runtime instruction detection for safe dispatch:
+  ```cpp
+  bool has_avx2() { return __builtin_cpu_supports("avx2"); }
+

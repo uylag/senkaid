@@ -1,0 +1,79 @@
+[Directory]: include/senkaid/config/target
+
+[Purpose]:
+This folder defines compile-time **hardware target specifications**. It informs the build system and the library itself about what **architecture, instruction sets, memory models, and compute backends** are currently enabled or supported.
+
+It acts as a **bridge between hardware capabilities and software behavior**, enabling runtime dispatch and compile-time specialization for optimal performance.
+
+[Expected files]:
+
+- target_arch.hpp
+  - Detects and defines macros for CPU/GPU architecture.
+    ```cpp
+    #if defined(__x86_64__) || defined(_M_X64)
+      #define SENKAID_ARCH_X86_64 1
+    #elif defined(__aarch64__)
+      #define SENKAID_ARCH_ARM64 1
+    #endif
+    ```
+
+- target_backend.hpp
+  - Defines which compute backend is being used:
+    ```cpp
+    #define SENKAID_USE_CPU 1
+    #define SENKAID_USE_CUDA 0
+    #define SENKAID_USE_HIP 0
+    #define SENKAID_USE_SYCL 0
+    ```
+
+- target_gpu.hpp
+  - GPU architecture and compute capability definitions:
+    ```cpp
+    #ifdef __CUDACC__
+      #define SENKAID_GPU_CUDA_ARCH __CUDA_ARCH__
+    #elif defined(__HIP_PLATFORM_AMD__)
+      #define SENKAID_GPU_HIP_ARCH __HIP_DEVICE_COMPILE__
+    #endif
+    ```
+
+- target_align.hpp
+  - Defines alignment rules and cache line sizes:
+    ```cpp
+    #define SENKAID_CACHELINE_SIZE 64
+    #define SENKAID_DEFAULT_ALIGNMENT 32
+    ```
+
+- target_intrinsics.hpp
+  - Macros for checking instruction set availability:
+    ```cpp
+    #define SENKAID_HAS_AVX2 __AVX2__
+    #define SENKAID_HAS_SVE __ARM_FEATURE_SVE
+    ```
+
+[Optional files]:
+
+- target_limits.hpp
+  - Hardware-dependent limits (max threads, max vector width, etc.)
+
+- target_debug.hpp
+  - Debug-only macros for target introspection/logging at runtime.
+
+[Integration]:
+
+- Used by `backend/simd`, `backend/cuda`, `backend/rocm_hip`, `ops/linalg`, and `parallel/`.
+- Helps enable/disable architecture-specific optimizations at compile-time.
+- CMake can predefine some of these macros, others are inferred with `#if`.
+
+[Notes]:
+
+- Avoids hardcoding architecture assumptions into logic.
+- Ensures maximum portability across CPU/GPU vendors and embedded/desktop targets.
+- Works with CMake flags like `-march=native`, `-DUSE_CUDA=ON`, etc.
+
+[Future]:
+
+- Add support for target introspection (logging actual architecture during init).
+- Add per-target fallback system (e.g., fallback to scalar ops if AVX-512 not supported).
+- Consider integration with external tools like `cpu_features`, `libcpuid`, or `clinfo`.
+
+

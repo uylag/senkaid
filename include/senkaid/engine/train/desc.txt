@@ -1,0 +1,93 @@
+[Directory]: include/senkaid/engine/train
+
+[Purpose]:
+This folder implements **training-related utilities** and **gradient-based optimization engines**. It acts as the bridge between your numerical linear algebra core and high-level machine learning functionality such as SGD, Adam, or autograd-compatible layers.
+
+It is *not* meant to replace full ML frameworks like PyTorch, but to support **modular, lightweight model training on top of Senkaid** — especially for research, embedded inference, or fast experimentation with custom ops and hardware-aware backends.
+
+[Expected files]:
+
+- train_config.hpp  
+  - Global configurations for training:
+    - learning rate
+    - weight decay
+    - batch size
+    - clip gradients, etc.
+  - Works well with `config/flags` for enabling GPU training paths.
+
+- optimizer_base.hpp  
+  - Abstract base class for all optimizers.
+    - `step()`, `zero_grad()`, `apply_update()`
+  - Supports CRTP or vtable-style dispatch depending on your performance/abstraction goals.
+
+- sgd.hpp  
+  - Stochastic Gradient Descent (vanilla + momentum).
+    - With optional Nesterov acceleration.
+    - GPU-ready kernel hooks if needed.
+
+- adam.hpp  
+  - Adam/AdamW optimizer:
+    - Bias correction
+    - Per-parameter learning rates
+    - Optional fused GPU kernel for performance.
+
+- rmsprop.hpp (optional)  
+  - For small models / online learning.
+  - Useful in low-memory or recurrent contexts.
+
+- gradient_buffer.hpp  
+  - Lightweight tensor-like wrapper that stores gradients and their states.
+  - May support:
+    - Lazy evaluation
+    - Sparse gradients
+    - Precision reduction (e.g., FP16)
+
+- loss.hpp  
+  - Basic loss functions:
+    - MSE, MAE
+    - CrossEntropy
+    - Huber, Smooth L1
+  - Gradients via manual backprop or autodiff.
+
+- hooks.hpp  
+  - Callbacks for logging, checkpointing, early stopping.
+  - Interfaces for user-defined callbacks:
+    ```cpp
+    on_epoch_end([](int epoch, float loss) { ... });
+    ```
+
+[Optional files]:
+
+- lr_scheduler.hpp  
+  - Learning rate decay strategies:
+    - Step, CosineAnnealing, OneCycle, etc.
+    - Supports GPU sync, warm-up phases.
+
+- train_state.hpp  
+  - Saves current epoch, best metrics, checkpoint paths.
+  - Used for resuming training.
+
+- minibatch_iterator.hpp  
+  - Small utility to split dataset into minibatches, optionally shuffle.
+  - CPU or pinned GPU memory modes.
+
+[Integration]:
+
+- Used with `engine/optimize` for gradient-based methods.
+- Designed to work with `core/tensor` or dense matrices/vectors.
+- Can use `backend/parallel` or `backend/cuda` for parallel training steps.
+- Optimizers can be attached to arbitrary structures (layers, tensors) via templates or runtime maps.
+
+[Notes]:
+
+- This layer helps Senkaid support training small models (e.g., regression, basic MLPs, PCA).
+- Meant for **deep integration into numerical research**, not for full neural network development (unless extended).
+- Can serve as **backend** for future differentiable ops and autodiff engines.
+
+[Future]:
+
+- Support mixed precision (AMP).
+- Distributed training support via shared memory or MPI.
+- Symbolic autodiff and graph recording for more complex model building.
+
+

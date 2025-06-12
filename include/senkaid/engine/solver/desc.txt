@@ -1,0 +1,97 @@
+[Directory]: include/senkaid/engine/solver
+
+[Purpose]:
+This folder provides **direct** and **iterative solvers** for systems of equations, including dense and sparse linear systems, eigenvalue problems, and decomposition-based solvers.
+
+Its goal is to provide a modular, high-performance interface for solving:
+- Ax = b  (Linear systems)
+- Ax = λx (Eigenproblems)
+- A⁻¹ or pseudo-inverse (used in regression, ML, control, etc.)
+
+[Expected files]:
+
+- solve.hpp
+  - High-level interface for `solve(A, b)`, auto-dispatches to optimal method:
+    - Dense: LU or QR
+    - Sparse: iterative or sparse LU
+    - GPU: CUDA/HIP if available
+  - May support `solve_inplace()` and `solve_async()` variants.
+
+- lu.hpp
+  - LU Decomposition solver (Gaussian elimination with pivoting).
+  - Supports:
+    - Partial/complete pivoting
+    - In-place or out-of-place
+    - Dense and small sparse matrices
+
+- qr.hpp
+  - QR decomposition-based solver using Householder or Givens rotations.
+  - Preferred for least squares: `min ‖Ax - b‖²`
+  - Works for full-rank and overdetermined systems.
+
+- cholesky.hpp
+  - Solver for symmetric positive-definite matrices using Cholesky.
+  - Efficient and numerically stable.
+  - Used in statistics, ML (e.g., Gaussian Processes), and physics simulations.
+
+- svd.hpp
+  - Singular Value Decomposition for rank-deficient or ill-conditioned problems.
+  - Provides:
+    - Full SVD: A = UΣVᵀ
+    - Truncated SVD for low-rank approximations
+    - Used in PCA, LSA, etc.
+
+- iterative.hpp
+  - Common iterative solvers:
+    - Conjugate Gradient (CG)
+    - GMRES
+    - BiCGSTAB
+  - Supports:
+    - Tolerance control
+    - Preconditioning (Jacobi, ILU, etc.)
+    - Sparse matrix formats
+
+- inverse.hpp
+  - `inverse(A)` or `A⁻¹` via LU, QR, or SVD.
+  - Optimized paths for diagonal, triangular, or block matrices.
+  - May fallback to iterative solver for large sparse matrices.
+
+- determinant.hpp
+  - Fast determinant computation via LU or row-reduction.
+  - Uses log-determinant for numerical stability if needed.
+
+- preconditioner.hpp (optional)
+  - Pluggable preconditioner interfaces for iterative solvers.
+  - Can include:
+    - Diagonal preconditioning
+    - ILU0
+    - Custom user-defined
+
+[Optional files]:
+
+- sparse_solver.hpp
+  - Interface for solving sparse linear systems with compressed formats (CSR, CSC).
+  - Backends: CPU, CUDA (cuSPARSE), HIP, or external solvers like KLU.
+
+- eigen_solver.hpp
+  - Eigenvalue and eigenvector solvers for symmetric, hermitian, or general matrices.
+  - Uses power method, Arnoldi iterations, or external libs.
+
+[Integration]:
+
+- Used in `engine/optimize` (e.g., Newton’s method → solve Hx = -grad).
+- Interacts with `core/matrix`, `core/sparse`, `core/layout`.
+- Backends may route calls to `backend/cpu`, `simd`, or GPU.
+
+[Notes]:
+
+- Should be templated over float, double, and complex.
+- Focus on numeric stability (pivoting, condition number checks).
+- Progressive overload resolution via `SolverTraits`.
+
+[Future]:
+
+- Integration with external solvers (SuiteSparse, Intel MKL, cuSolver).
+- Block solver support (for batched ML tasks).
+- Lazy solving interface (deferred evaluation).
+

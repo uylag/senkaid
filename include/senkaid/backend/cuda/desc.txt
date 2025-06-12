@@ -1,0 +1,61 @@
+[Directory]: include/senkaid/backend/cuda
+
+[Purpose]:
+This folder implements GPU-accelerated kernels using NVIDIA CUDA.
+It provides high-performance versions of core linear algebra routines, memory operations, and tensor computations,
+intended for execution on CUDA-compatible devices.
+
+The goal is to transparently offload heavy operations to the GPU when available, while maintaining interoperability
+with host-side memory and CPU backends.
+
+[Expected files]:
+
+- matmul_cuda.cu / .hpp
+  - High-performance matrix multiplication using shared memory, tiling, and warp-level optimizations.
+  - May offer multiple variants: naïve, tiled, cooperative groups, tensor cores (if available).
+
+- reduce_cuda.cu / .hpp
+  - Parallel reduction (e.g., sum, max, argmax) using warp shuffles and efficient memory access patterns.
+
+- transform_cuda.cu / .hpp
+  - Element-wise operations like `exp`, `sigmoid`, `tanh`, etc. optimized via device-level execution.
+
+- memory_cuda.cu / .hpp
+  - Memory allocators and host-device synchronization: `cudaMalloc`, `cudaMemcpy`, `cudaStream`, etc.
+  - May include wrappers for pinned memory, unified memory, and stream-aware copies.
+
+- dot_cuda.cu / .hpp
+  - Optimized dot product kernel using warp-level reductions or cuBLAS fallback.
+
+- dispatch_cuda.hpp
+  - Dispatch entry-point that handles kernel launches, error checking, and stream management.
+
+- kernel_utils.cuh
+  - Common macros, grid/block utilities, and memory access helpers (e.g., indexing, bounds checks).
+
+[Optional files]:
+
+- cublas_wrapper.hpp / .cpp
+  - Interface to cuBLAS for high-performance BLAS-level operations (optional dependency).
+  - Used when performance or hardware demands exceed custom kernels.
+
+- error_check.hpp
+  - Error-checking and macro wrappers for safe CUDA API usage (`cudaSafeCall(...)`).
+
+- stream_manager.hpp
+  - Optional abstraction for handling multiple concurrent CUDA streams.
+
+[Notes]:
+- All `.cu` files must be compiled with NVCC.
+- Avoid device-host coupling: no raw `std::vector`, only raw pointers or managed arrays.
+- CUDA kernels should follow RAII-safe wrappers and handle edge-case memory alignment.
+
+[Integration]:
+- This folder integrates with `backend/dispatch` to dynamically route operations to CUDA when supported.
+- May be disabled at compile-time if CUDA toolkit is unavailable.
+
+[Future]:
+- Support for mixed precision, Tensor Cores (FP16, BF16).
+- Potential use of CUDA Graphs and cooperative groups for large workloads.
+- Runtime device capability detection (via `cudaGetDeviceProperties`).
+

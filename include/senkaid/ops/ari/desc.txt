@@ -1,0 +1,74 @@
+[Directory]: include/senkaid/ops/ari
+
+[Purpose]:
+This folder implements **element-wise arithmetic operations** (add, sub, mul, div, neg, abs, etc.) over scalars, vectors, matrices, and tensors. These are the **core low-level operations** that nearly all higher-level numerical and ML routines rely on.
+
+Performance-critical: these ops will often be fused, vectorized (SIMD), or dispatched to GPU kernels.
+
+[Expected files]:
+
+- add.hpp  
+  - Defines overloaded `add()` functions for:
+    - Scalar + Scalar
+    - Matrix + Matrix
+    - Matrix + Scalar (broadcast)
+    - Tensor + Tensor
+  - Supports in-place and out-of-place versions:
+    ```cpp
+    C = add(A, B);          // out-of-place
+    add_inplace(A, B);      // modifies A
+    ```
+
+- sub.hpp  
+  - Similar to `add.hpp`, implements element-wise subtraction.
+
+- mul.hpp  
+  - Element-wise multiplication.
+  - NOT dot product or matrix multiplication — this is `A[i][j] * B[i][j]`.
+
+- div.hpp  
+  - Element-wise division with safety:
+    - Handles divide-by-zero
+    - Optional epsilon thresholding
+    - Special handling for int division
+
+- neg.hpp  
+  - Unary negation: `-A`  
+  - Often fused with other ops in kernels.
+
+- abs.hpp  
+  - Element-wise absolute value (useful for norms, loss functions).
+
+- reciprocal.hpp (optional)  
+  - Element-wise reciprocal: `1.0 / x`  
+  - Needed for algorithms like normalization, softmax.
+
+- fused.hpp (optional)  
+  - Fused ops: e.g. `add_mul(A, B, C)` → `A + B * C`
+  - Implemented for performance-critical routines.
+
+- pow.hpp (optional)  
+  - Element-wise exponentiation: `A^x`
+  - Supports broadcasting and scalar exponent.
+
+[Integration]:
+
+- `ops/ari` is used heavily in:
+  - `ops/linalg` for vector/matrix element-wise ops
+  - `engine/train` for loss and gradient updates
+  - `ops/reduce` for `abs`, `square`, etc.
+  - `backend/simd` and `backend/cuda` for fused kernels
+
+[Design Considerations]:
+
+- All ops should:
+  - Work on both dynamic and static containers
+  - Be dispatchable to CPU, SIMD, GPU where available
+  - Avoid implicit memory allocations (reuse buffers if possible)
+  - Support compile-time and runtime size safety checks
+
+- Template specialization for combinations:
+  ```cpp
+  template <typename T, size_t N>
+  void add(const StaticVector<T, N>& a, const StaticVector<T, N>& b, StaticVector<T, N>& out);
+

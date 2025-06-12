@@ -1,0 +1,78 @@
+[Directory]: include/senkaid/ops/broadcast
+
+[Purpose]:
+This folder defines **broadcasting mechanisms** and **element-wise operations with shape extension** for vectors, matrices, and tensors — mimicking the semantics of NumPy and PyTorch broadcasting rules.
+
+Core idea: automatically extend lower-rank shapes (e.g., scalar, vector) to match higher-rank tensors during arithmetic ops, without manual replication.
+
+[Expected files]:
+
+- broadcast_utils.hpp  
+  - Core compile-time + runtime logic for shape compatibility:
+    - Broadcasting rules (e.g., `1xN` + `MxN` → `MxN`)
+    - Shape matching validation
+    - Dim expansion logic
+    ```cpp
+    bool can_broadcast(const Shape& a, const Shape& b);
+    Shape broadcast_shape(const Shape& a, const Shape& b);
+    ```
+
+- broadcast_binary.hpp  
+  - Element-wise ops with broadcasting for two inputs:
+    - `add_broadcast(a, b)` where a and b may differ in rank or shape
+    - Internally computes output shape, then calls fused loop
+    - Optimized for:
+      - Scalar × tensor
+      - Row/column vector × matrix
+      - Lower-dim tensor × higher-dim tensor
+
+- broadcast_unary.hpp  
+  - Broadcasting for unary ops on subdimensions (e.g. normalize along dim=1).
+    - Used for:
+      - Normalization
+      - Softmax
+      - Per-channel statistics
+
+- broadcast_expr.hpp (optional)  
+  - Lazy expressions for broadcasted operations.
+  - Instead of allocating memory, returns a view object that pretends to be a broadcasted tensor.
+
+- broadcast_shape.hpp  
+  - Shape traits for compile-time broadcasting support
+    - Static broadcasting if shape is known at compile-time
+    - Used with `StaticMatrix`, `StaticTensor`, etc.
+
+- broadcast_inplace.hpp (optional)  
+  - For efficient in-place ops like:
+    ```cpp
+    broadcast_add_inplace(tensor, scalar);  // tensor += scalar
+    ```
+
+[Integration]:
+
+- Used by:
+  - `ops/ari` to enable flexible shapes (`matrix + scalar`, `vector + matrix`)
+  - `engine/train` for per-sample or per-feature gradients
+  - `engine/optimize` for parameter updates with scalar learning rates
+  - `backend/simd`, `cuda`, `rocm_hip` for fused broadcast kernels
+
+[Design Notes]:
+
+- Broadcasting should:
+  - Be **zero-copy** when possible
+  - Support **both dynamic and static shapes**
+  - Minimize heap allocations
+  - Handle invalid cases with clear errors (e.g. `ShapeMismatchError`)
+
+- Compile-time optimizations (when using `StaticShape` types) can eliminate loops entirely:
+    ```cpp
+    static_assert(can_broadcast<StaticShape<1, 3>, StaticShape<4, 3>>);
+    ```
+
+[Future Features]:
+
+- Broadcasting across arbitrary dimensions (e.g. dim=2 for 3D tensors)
+- Broadcasting views (`BroadcastView<T>`)
+- Broadcasting-aware automatic differentiation (in `train/`)
+
+

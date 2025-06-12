@@ -1,0 +1,76 @@
+[Directory]: include/senkaid/backend/parallel
+
+[Purpose]:
+This folder contains abstractions, utilities, and implementations for **multi-threaded CPU execution** using
+platform-independent backends like OpenMP, std::thread, TBB (Threading Building Blocks), or custom thread pools.
+
+The goal is to accelerate heavy operations (e.g., matrix multiplication, reductions, element-wise transforms)
+by fully utilizing multi-core CPUs **without changing the interface or logic** of the mathematical operations.
+
+[Expected files]:
+
+- parallel_backend.hpp
+  - Main entry point. Selects which parallel backend to use at compile-time:
+    ```cpp
+    #if defined(SENKAID_USE_OPENMP)
+      #include "parallel_openmp.hpp"
+    #elif defined(SENKAID_USE_TBB)
+      #include "parallel_tbb.hpp"
+    #else
+      #include "parallel_std.hpp"
+    #endif
+    ```
+
+- parallel_openmp.hpp / .cpp
+  - Wrappers for OpenMP parallel execution.
+  - Supports `#pragma omp parallel for`, reductions, and both static and dynamic scheduling.
+
+- parallel_std.hpp
+  - Uses `std::thread`, `std::async`, `std::mutex`, and `std::condition_variable`.
+  - Optionally supports a lightweight custom thread pool when external dependencies are not desired.
+
+- parallel_tbb.hpp
+  - Intel TBB (if enabled).
+  - Leverages `tbb::parallel_for`, `tbb::blocked_range`, and task scheduling for dynamic load balancing.
+
+- parallel_config.hpp
+  - Global config for thread behavior:
+    - max number of threads
+    - enabling/disabling parallelism
+    - scheduling strategies
+
+- parallel_for.hpp
+  - Simple unified parallel-for abstraction:
+    ```cpp
+    parallel_for(0, N, [&](int i) {
+      // thread-safe workload
+    });
+    ```
+
+[Optional files]:
+
+- task_group.hpp
+  - Interface for running independent tasks concurrently.
+  - May use `std::future`, `std::async`, or task pooling.
+
+- affinity.hpp
+  - Sets thread affinity (pinning threads to cores) to reduce cache contention and improve performance.
+
+[Integration]:
+- Used by `backend/cpu`, `ops/linalg`, `ops/reduce`, `engine/optimize`.
+- All CPU workloads can benefit from `parallel_for` if not SIMD-optimized.
+- Architecture-independent. Works on all CPU platforms that support threading.
+
+[Notes]:
+- The user never needs to manually spawn or join threads. All logic is abstracted away.
+- Performance highly depends on:
+  - number of physical cores
+  - cache behavior
+  - memory bandwidth
+  - false sharing mitigation
+
+[Future]:
+- Support for task-based execution (e.g., task graphs, work stealing).
+- Integration with modern C++ parallel frameworks (`std::execution`, SYCL).
+- Advanced resource control (NUMA-awareness, thread throttling, hierarchical scheduling).
+

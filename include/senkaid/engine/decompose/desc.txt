@@ -1,0 +1,74 @@
+[Directory]: include/senkaid/engine/decompose
+
+[Purpose]:
+This folder contains **matrix decomposition algorithms** — essential tools for solving linear systems, computing matrix inverses, eigenvalues, singular values, and more. These are often the core of machine learning, simulation, and optimization tasks.
+
+The goal is to provide both **high-performance** and **high-precision** implementations of standard decomposition methods, with CPU and GPU support, and fallback strategies depending on architecture/backend.
+
+[Expected files]:
+
+- lu.hpp / lu.cpp
+  - LU decomposition with partial pivoting: \( PA = LU \)
+  - Used for solving linear systems and inverting matrices.
+  - May include:
+    - Crout, Doolittle methods
+    - Optimized block-based versions
+
+- qr.hpp / qr.cpp
+  - QR decomposition: \( A = QR \), where \( Q \) is orthogonal.
+  - Useful in least-squares, orthonormalization, etc.
+  - May support:
+    - Householder reflections
+    - Gram-Schmidt (for smaller cases)
+
+- cholesky.hpp / cholesky.cpp
+  - For positive definite matrices: \( A = LL^T \)
+  - Used in numerical optimization, probabilistic models (Gaussian, Kalman Filters)
+
+- svd.hpp / svd.cpp
+  - Singular Value Decomposition: \( A = U \Sigma V^T \)
+  - Fundamental in PCA, dimensionality reduction, matrix approximation
+  - Likely fallback to CPU if GPU SVD isn’t yet implemented.
+
+- eig.hpp / eig.cpp
+  - Eigenvalue/eigenvector solvers for symmetric/asymmetric matrices.
+  - Power method, QR iteration, or LAPACK-style wrappers.
+  - Separate implementations for:
+    - symmetric dense matrices
+    - general dense matrices
+
+- ldl.hpp / ldl.cpp (optional)
+  - LDL^T decomposition for symmetric matrices (like Cholesky but more general).
+  - Used for semi-definite systems or symbolic factorizations.
+
+[Optional files]:
+
+- hessenberg.hpp / schur.hpp
+  - For internal use in eigenvalue computation (Hessenberg, Schur form).
+  - Often required for general complex or non-Hermitian matrices.
+
+- decompose_utils.hpp
+  - Shared utility functions (pivoting, blocking, memory management, etc.)
+
+- decompose_gpu.hpp
+  - Wrappers around cuSOLVER / rocSOLVER for GPU-accelerated decomposition.
+
+[Integration]:
+
+- Called internally from `engine/solver`, `ops/linalg`, and machine learning modules.
+- GPU versions should fall back gracefully to CPU.
+- Can be accelerated using `backend/simd`, `backend/parallel`.
+
+[Notes]:
+
+- All decompositions must be **numerically stable** and allow both **row-major and col-major layouts**.
+- Use templates to support both `float`, `double`, and complex types.
+- May expose simplified `decompose(A, method::QR)` or overloads.
+
+[Future]:
+
+- Add batched decompositions for GPU (e.g., for training models).
+- Add support for sparse matrix decompositions in collaboration with `sparse/`.
+- Add autodiff-compatible versions for optimization engines.
+
+

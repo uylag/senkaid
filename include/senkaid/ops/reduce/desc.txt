@@ -1,0 +1,97 @@
+[Directory]: include/senkaid/ops/reduce
+
+[Purpose]:
+Provides **reduction operations** over vectors, matrices, and higher-rank tensors.
+
+A reduction collapses a tensor along one or more axes by applying an associative function (e.g., sum, max, mean). This is essential in:
+- norm computations
+- tensor contractions
+- statistics
+- loss functions
+- matrix summarization
+- broadcasting-aware processing
+
+[Expected files]:
+
+- sum.hpp  
+  - Computes the sum over one or more axes.
+  - Overloads:
+    ```cpp
+    sum(x);             // full reduction
+    sum(x, axis = 1);   // reduce along axis 1
+    ```
+
+- max.hpp  
+  - Finds the maximum value along the axis.
+  - Also supports `argmax()` variant (index of maximum)
+
+- min.hpp  
+  - Same as above, but for minimum
+
+- mean.hpp  
+  - Mean = sum / count.
+  - Must support integer-safe division, accurate for floating-point
+
+- norm.hpp  
+  - Norms like L1, L2, ∞-norms
+    ```cpp
+    norm(x, order = 2);  // L2 norm
+    ```
+
+- prod.hpp  
+  - Computes product of all elements or along an axis.
+
+- variance.hpp / stddev.hpp  
+  - Variance and standard deviation.
+  - `stddev(x, unbiased = true)`
+
+- argmax.hpp / argmin.hpp  
+  - Return indices of max/min values.
+  - Used in classification, sorting, alignment tasks.
+
+- count_nonzero.hpp  
+  - Count how many non-zero elements exist (per axis or globally).
+  - Often used for sparsity checks.
+
+[Optional files]:
+
+- reduce_generic.hpp  
+  - Unified template for custom associative reductions
+  - Allows user-defined `functor + identity`:
+    ```cpp
+    reduce(x, f, identity);
+    ```
+
+- reduce_masked.hpp  
+  - Reductions over masked tensors (see `ops/logical`)
+
+- reduce_dim.hpp  
+  - Utilities for handling multi-axis reductions and shape updates.
+
+[Integration]:
+
+- Used in:
+  - `engine/optimize` (e.g., loss computations)
+  - `ops/linalg` (matrix norms, traces)
+  - `core/tensor`, `core/vector` (as member functions or free functions)
+
+- GPU kernels available via `backend/cuda`, `backend/rocm_hip`.
+- SIMD-accelerated inner loops from `backend/simd`.
+
+[Design Notes]:
+
+- Reductions must:
+  - Avoid false sharing (e.g., via thread-local accumulation)
+  - Handle non-contiguous memory
+  - Be associative (for parallel correctness)
+  - Provide both lazy and eager evaluation modes
+  - Have support for axis batching and slicing
+
+[Future]:
+
+- Add support for:
+  - multi-stage hierarchical reductions
+  - mixed precision reductions
+  - reduction fusion (chaining sum + mean)
+  - auto-parallel scheduling
+

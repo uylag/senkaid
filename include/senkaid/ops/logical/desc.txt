@@ -1,0 +1,95 @@
+[Directory]: include/senkaid/ops/logical
+
+[Purpose]:
+Implements **elementwise logical operations**, comparisons, and condition-based combinators over scalars, vectors, matrices, and higher-order tensors.
+
+Used extensively in:
+- conditional transformations
+- masking
+- branching logic in matrix/tensor operations
+- sparse pattern generation
+- neural activation conditions
+
+[Expected files]:
+
+- equal.hpp  
+  - `equal(a, b)` → returns boolean matrix/vector indicating where `a[i][j] == b[i][j]`
+  - Type-agnostic: supports scalar × scalar, scalar × tensor, tensor × tensor
+
+- not_equal.hpp  
+  - Elementwise `!=` for all dimensionalities
+
+- greater.hpp  
+  - `greater(a, b)` → boolean mask of where `a > b`
+
+- less.hpp  
+  - `less(a, b)` → boolean mask of where `a < b`
+
+- greater_equal.hpp  
+  - `a >= b`
+
+- less_equal.hpp  
+  - `a <= b`
+
+- logical_and.hpp  
+  - Boolean AND on elementwise data
+  - If used in mask propagation, must short-circuit if possible
+
+- logical_or.hpp  
+  - Elementwise OR, used for unions of masks
+
+- logical_not.hpp  
+  - Bitwise NOT for bool matrices
+
+- where.hpp  
+  - Core conditional operator:
+    ```cpp
+    where(cond, a, b); // cond ? a : b
+    ```
+  - Must broadcast if dimensions mismatch
+  - Often vectorized
+
+[Optional files]:
+
+- is_nan.hpp  
+  - Detects `NaN` entries (especially for float/double)
+
+- is_inf.hpp  
+  - Checks for infinities
+
+- any.hpp / all.hpp  
+  - Reductions over logical tensors:
+    - `any(x > 0)` → `true` if any condition met
+    - `all(x != 0)` → true if all values are non-zero
+
+- mask_ops.hpp  
+  - Custom logic for extracting/combining masks:
+    - `combine_masks(m1, m2)`
+    - `invert_mask(m)`
+
+[Integration]:
+
+- Used internally in:
+  - `ops/broadcast`
+  - `engine/train` (for activation gates)
+  - `backend/dispatch` (for conditional kernels)
+
+- Masks from logical operations may be used to:
+  - Avoid computations on zeros
+  - Build `sparse` representations
+  - Select submatrices/views
+
+[Design Notes]:
+
+- All functions must support:
+  - Scalar broadcasting (e.g., `x > 0`)
+  - Boolean outputs (matrix<bool> or equivalent)
+  - Lazy evaluation where possible
+  - SIMD-aware condition evaluation
+
+[Future]:
+
+- Integration with expression templates (mask chaining)
+- Compile-time masking for static matrices
+- Hardware support: AVX masked comparisons
+
