@@ -9,7 +9,7 @@
  * defines.hpp by providing fine-grained control over library behavior.
  */
 
-#include "root.hpp"
+
 
 // ==========================================
 // Backend Configuration
