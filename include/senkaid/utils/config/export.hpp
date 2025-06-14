@@ -70,7 +70,7 @@
 // Deprecation Utilities
 // ==========================================
 
-#if defined(SENKAID_CXX17)
+#if defined(SENKAID_CXX20)
     #define SENKAID_DEPRECATED_EXPORT(message) \
         SENKAID_EXPORT [[deprecated(message)]]
 #else

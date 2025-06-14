@@ -63,30 +63,12 @@
 // Optimization Hints
 // ==========================================
 
-// Loop vectorization hint
-#if defined(SENKAID_COMPILER_GCC) || defined(SENKAID_COMPILER_CLANG)
-    #define SENKAID_VECTORIZE SENKAID_PRAGMA(ivdep)
-#else
-    #define SENKAID_VECTORIZE
-#endif
-
-// Loop unrolling hint
-#if defined(SENKAID_COMPILER_GCC)
-    #define SENKAID_UNROLL(N) SENKAID_PRAGMA(unroll N)
-#elif defined(SENKAID_COMPILER_CLANG)
-    #define SENKAID_UNROLL(N) SENKAID_PRAGMA(unroll N)
-#elif defined(SENKAID_COMPILER_MSVC)
-    #define SENKAID_UNROLL(N) SENKAID_PRAGMA(loop(hint_parallel(N)))
-#else
-    #define SENKAID_UNROLL(N)
-#endif
-
 // Prefetch hint for cache optimization
-#if defined(SENKAID_ARCH_X86_64) && (defined(SENKAID_COMPILER_GCC) || defined(SENKAID_COMPILER_CLANG))
-    #define SENKAID_PREFETCH(addr, rw, locality) __builtin_prefetch(addr, rw, locality)
-#else
-    #define SENKAID_PREFETCH(addr, rw, locality)
-#endif
+// #if defined(SENKAID_ARCH_X86_64) && (defined(SENKAID_COMPILER_GCC) || defined(SENKAID_COMPILER_CLANG))
+//    #define SENKAID_PREFETCH(addr, rw, locality) __builtin_prefetch(addr, rw, locality)
+// #else
+//    #define SENKAID_PREFETCH(addr, rw, locality)
+// #endif
 
 // ==========================================
 // Memory Management Configuration

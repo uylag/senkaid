@@ -111,7 +111,8 @@
 // ==========================================
 
 #if defined(SENKAID_COMPILER_CLANG) || defined(SENKAID_COMPILER_GCC)
-    #define SENKAID_PRAGMA(x) _Pragma(#x)
+    #define SENKAID_STR(x) #x
+    #define SENKAID_PRAGMA(x) _Pragma(SENKAID_STR(x))
     #define SENKAID_PRAGMA_WARNING_PUSH SENKAID_PRAGMA(GCC diagnostic push)
     #define SENKAID_PRAGMA_WARNING_POP SENKAID_PRAGMA(GCC diagnostic pop)
     #define SENKAID_PRAGMA_DISABLE_WARNING(warning) SENKAID_PRAGMA(GCC diagnostic ignored warning)

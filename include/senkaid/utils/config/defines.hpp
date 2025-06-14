@@ -59,12 +59,14 @@
 // Optimization Settings
 // ==========================================
 
-namespace senkaid::config {
+#define SENKAID_LOOP_UNROLL_FACTOR 8
+
+namespace senkaid::utils::config {
     // Default matrix storage order
     inline constexpr bool is_row_major = true;
 
     // Default unroll factor for loops
-    inline constexpr std::size_t loop_unroll_factor = 4;
+    inline constexpr std::size_t loop_unroll_factor = 8;
 
     // Default tile size for matrix operations
     inline constexpr std::size_t tile_size = 64;
@@ -75,13 +77,13 @@ namespace senkaid::config {
 
     // Maximum dimension for static matrices
     inline constexpr std::size_t max_static_dim = 16;
-} // namespace senkaid::config
+} // namespace senkaid::utils::config
 
 // ==========================================
 // Library-Wide Constants
 // ==========================================
 
-#define SENKAID_DEFAULT_ALIGNMENT senkaid::config::simd_alignment
+#define SENKAID_DEFAULT_ALIGNMENT senkaid::utils::config::simd_alignment
 
 // ==========================================
 // Error Handling
