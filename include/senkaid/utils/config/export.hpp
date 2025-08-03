@@ -1,90 +1,68 @@
 #pragma once
 
-/**
- * @file export.hpp
- * @brief Symbol visibility and export/import macros for the Senkaid library.
- *
- * Defines macros for controlling shared library symbol visibility and exports,
- * ensuring portability across platforms and compilers. Integrates with compiler.hpp,
- * platform.hpp, and defines.hpp for consistent configuration.
- */
+// export.hpp: Defines macros for controlling symbol visibility in the senkaid library.
+// Ensures proper export/import of symbols for shared libraries and minimizes symbol bloat.
+// All macros are prefixed with SENKAID_ to avoid conflicts and can be overridden via CMake.
 
-#include "compiler.hpp"
-#include "platform.hpp"
-#include "defines.hpp"
+// SENKAID_EXPORT: Marks functions, classes, or variables for export in shared libraries.
+// Used when building the senkaid library as a shared library (DLL on Windows).
+// SENKAID_IMPORT: Marks symbols for import when linking against the senkaid library.
+// Platform-specific implementations for Windows (DLL) and Unix-like systems (visibility).
 
-// ==========================================
-// Shared Library Export/Import Configuration
-// ==========================================
-
-// Define SENKAID_BUILD_SHARED to enable shared library build (set via CMake)
-#ifndef SENKAID_BUILD_SHARED
-    #define SENKAID_BUILD_SHARED 0
-#endif
-
-// Export/import macros for shared libraries
-#if defined(SENKAID_PLATFORM_WINDOWS)
-    #if SENKAID_BUILD_SHARED
-        #ifdef SENKAID_BUILDING_LIBRARY
-            #define SENKAID_EXPORT __declspec(dllexport)
-        #else
-            #define SENKAID_EXPORT __declspec(dllimport)
-        #endif
-        #define SENKAID_NO_EXPORT
+#ifdef _WIN32
+    // Windows-specific export/import for DLLs
+    #ifdef SENKAID_BUILD_DLL
+        // Building the senkaid library as a shared library
+        #define SENKAID_EXPORT __declspec(dllexport)
     #else
-        #define SENKAID_EXPORT
-        #define SENKAID_NO_EXPORT
+        // Linking against the senkaid shared library
+        #define SENKAID_EXPORT __declspec(dllimport)
     #endif
-#else // POSIX systems (Linux, macOS)
-    #if SENKAID_BUILD_SHARED
-        #define SENKAID_EXPORT __attribute__((visibility("default")))
-        #define SENKAID_NO_EXPORT __attribute__((visibility("hidden")))
-    #else
-        #define SENKAID_EXPORT
-        #define SENKAID_NO_EXPORT
-    #endif
-#endif
-
-// Class-specific export macro
-#define SENKAID_CLASS_EXPORT SENKAID_EXPORT
-
-// Template export macro (no effect on Windows, visibility control on POSIX)
-#if defined(SENKAID_PLATFORM_WINDOWS)
-    #define SENKAID_TEMPLATE_EXPORT
+    #define SENKAID_IMPORT __declspec(dllimport)
 #else
-    #define SENKAID_TEMPLATE_EXPORT SENKAID_EXPORT
+    // Unix-like systems (Linux, macOS) use GCC/Clang visibility attributes
+    #define SENKAID_EXPORT __attribute__((visibility("default")))
+    #define SENKAID_IMPORT
 #endif
 
-// ==========================================
-// ABI Versioning
-// ==========================================
-
-// Mark symbols with specific ABI version
-#define SENKAID_ABI_VERSIONED(version) \
-    SENKAID_EXPORT __attribute__((symver("senkaid@" #version)))
-
-// Default ABI version macro
-#define SENKAID_ABI_DEFAULT SENKAID_ABI_VERSIONED(SENKAID_ABI_VERSION)
-
-// ==========================================
-// Deprecation Utilities
-// ==========================================
-
-#if defined(SENKAID_CXX20)
-    #define SENKAID_DEPRECATED_EXPORT(message) \
-        SENKAID_EXPORT [[deprecated(message)]]
+// SENKAID_HIDDEN: Explicitly hides symbols to reduce binary size and prevent unintended exports.
+// Supported on Unix-like systems with GCC/Clang; no-op on Windows.
+#ifndef _WIN32
+    #define SENKAID_HIDDEN __attribute__((visibility("hidden")))
 #else
-    #define SENKAID_DEPRECATED_EXPORT(message) SENKAID_EXPORT
+    #define SENKAID_HIDDEN
 #endif
 
-// ==========================================
-// Compile-Time Validation
-// ==========================================
-
-#if SENKAID_BUILD_SHARED && defined(SENKAID_PLATFORM_UNKNOWN)
-    #warning "Shared library build on unknown platform; export behavior undefined"
+// SENKAID_API: Convenience macro for public API symbols.
+// Applies SENKAID_EXPORT when building the library, otherwise SENKAID_IMPORT.
+#ifdef SENKAID_BUILD_DLL
+    #define SENKAID_API SENKAID_EXPORT
+#else
+    #define SENKAID_API SENKAID_IMPORT
 #endif
 
-#if defined(SENKAID_BUILDING_LIBRARY) && !SENKAID_BUILD_SHARED
-    #error "SENKAID_BUILDING_LIBRARY defined but shared library build not enabled"
+// SENKAID_NO_EXPORT: Marks symbols that should not be exported, even in shared libraries.
+// Useful for internal functions or classes.
+#define SENKAID_NO_EXPORT SENKAID_HIDDEN
+
+// SENKAID_EXPORT_TEMPLATE: Explicitly exports template instantiations.
+// Used for common types (e.g., Matrix<float>, Matrix<double>) to reduce template bloat.
+#ifdef _WIN32
+    #define SENKAID_EXPORT_TEMPLATE __declspec(dllexport)
+#else
+    #define SENKAID_EXPORT_TEMPLATE __attribute__((visibility("default")))
 #endif
+
+// SENKAID_EXPORT_CLASS: Convenience macro for exporting entire classes.
+// Ensures all class members are exported correctly.
+#define SENKAID_EXPORT_CLASS SENKAID_EXPORT
+
+// SENKAID_EXPORT_FUNCTION: Convenience macro for exporting standalone functions.
+#define SENKAID_EXPORT_FUNCTION SENKAID_EXPORT
+
+#ifdef SENKAID_BUILD_DLL
+    #define SENKAID_EXTERN_TEMPLATE extern template class SENKAID_EXPORT
+#else
+    #define SENKAID_EXTERN_TEMPLATE extern template class
+#endif
+

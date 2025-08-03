@@ -1,22 +1,39 @@
 #pragma once
 
-#include <cstdint>
-#include <string_view>
+#include <string>
 
-namespace senkaid::utils::config {
-    struct version {
-        static constexpr inline std::size_t _major = 0;
-        static constexpr inline std::size_t _minor = 0;
-        static constexpr inline std::size_t _patch = 1;
-        static constexpr inline std::size_t _abi = 1;
-        static constexpr inline std::string_view _string = "0.0.1";
-        static constexpr inline std::string_view _full = "v0.0.1 (ABI 1)";
+// Version numbers for semantic versioning (MAJOR.MINOR.PATCH)
+#define SENKAID_VERSION_MAJOR 1
+#define SENKAID_VERSION_MINOR 0
+#define SENKAID_VERSION_PATCH 0
 
-        [[nodiscard]]
-        static constexpr bool at_least(const std::size_t& major, std::size_t& minor, const std::size_t& patch) {
-            return (_major > major) ||
-                   (_major == major && _minor > minor) ||
-                   (_major == major && _minor == minor && _patch >= patch);
-        }
-    };
-} // namespace senkaid::utils::config
+// Version string for user-facing display and runtime checks
+#define SENKAID_VERSION_STRING "1.0.0"
+
+// API version for compatibility checks (incremented for breaking changes)
+#define SENKAID_API_VERSION 100
+
+// Compile-time version check macro
+#define SENKAID_VERSION_ENCODE(major, minor, patch) \
+    ((major) * 10000 + (minor) * 100 + (patch))
+
+// Current encoded version
+#define SENKAID_VERSION \
+    SENKAID_VERSION_ENCODE(SENKAID_VERSION_MAJOR, SENKAID_VERSION_MINOR, SENKAID_VERSION_PATCH)
+
+// Runtime version query function
+namespace senkaid {
+    inline std::string get_version() {
+        return SENKAID_VERSION_STRING;
+    }
+
+    inline int get_api_version() {
+        return SENKAID_API_VERSION;
+    }
+
+    // Compile-time check for minimum required version
+    template<int Major, int Minor, int Patch>
+    constexpr bool check_minimum_version() {
+        return SENKAID_VERSION >= SENKAID_VERSION_ENCODE(Major, Minor, Patch);
+    }
+}

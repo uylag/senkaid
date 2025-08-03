@@ -1,272 +1,158 @@
 #pragma once
 
-/**
- * @file debug.hpp
- * @brief Debugging and logging configuration macros for the Senkaid library.
- *
- * Defines macros and utilities for controlling debug assertions, logging levels,
- * and runtime checks. Integrates with compiler.hpp, platform.hpp, defines.hpp,
- * and config_macros.hpp to provide consistent debugging behavior.
- */
+// debug.hpp: Defines macros for debugging, logging, and runtime checks in the senkaid library.
+// Provides assertions, numerical validation, logging, and profiling support.
+// Self-contained with no dependencies on other utils/config/*.hpp files; all macros have defaults.
 
-#include "compiler.hpp"
-#include "platform.hpp"
-#include "defines.hpp"
-#include "config_macros.hpp"
-#include <source_location>
-#include <cstdint>
-#include <cmath>
+// --- Debug and Assertion Macros ---
 
-// ==========================================
-// Debug Assertion Configuration
-// ==========================================
-
-#if SENKAID_ASSERTIONS_ENABLED
-    #define SENKAID_DEBUG_ASSERT(condition, message) \
-        do { \
-            if (!(condition)) { \
-                senkaid::utils::config::debug::assert_failure(#condition, message, \
-                    std::source_location::current()); \
-            } \
-        } while (false)
-#else
-    #define SENKAID_DEBUG_ASSERT(condition, message)
+// SENKAID_STRINGIFY: Utility macro for stringifying values.
+#ifndef SENKAID_STRINGIFY
+    #define SENKAID_STRINGIFY(x) #x
 #endif
 
-// Runtime check (always enabled)
-#define SENKAID_RUNTIME_CHECK(condition, message) \
-    do { \
-        if (!(condition)) { \
-            senkaid::utils::config::debug::runtime_failure(#condition, message, \
-                std::source_location::current()); \
-        } \
-    } while (false)
-
-// Numerical stability check (controlled by SENKAID_CHECK_NUMERICS)
-#if SENKAID_CHECK_NUMERICS
-    #define SENKAID_NUMERIC_CHECK(value, message) \
-        senkaid::utils::config::debug::numeric_check(value, #value, message, \
-            std::source_location::current())
-#else
-    #define SENKAID_NUMERIC_CHECK(value, message)
-#endif
-
-// ==========================================
-// Logging Configuration
-// ==========================================
-
-#define SENKAID_LOG_ERROR(message) \
-    SENKAID_LOG_LEVEL_CHECK(1, senkaid::utils::config::debug::log_error, message)
-
-#define SENKAID_LOG_WARNING(message) \
-    SENKAID_LOG_LEVEL_CHECK(2, senkaid::utils::config::debug::log_warning, message)
-
-#define SENKAID_LOG_INFO(message) \
-    SENKAID_LOG_LEVEL_CHECK(3, senkaid::utils::config::debug::log_info, message)
-
-// Internal logging level check
-#define SENKAID_LOG_LEVEL_CHECK(level, func, message) \
-    do { \
-        if (SENKAID_LOG_LEVEL >= level) { \
-            func(message, std::source_location::current()); \
-        } \
-    } while (false)
-
-// ==========================================
-// Debug Namespace
-// ==========================================
-
-namespace senkaid::utils::config::debug {
-    // Logging severity levels
-    enum class LogLevel : std::uint8_t {
-        None = 0,
-        Error = 1,
-        Warning = 2,
-        Info = 3
-    };
-
-    // Current log level (compile-time)
-    inline constexpr LogLevel log_level = static_cast<LogLevel>(SENKAID_LOG_LEVEL);
-
-    // Assertion failure handler
-    [[noreturn]] SENKAID_FORCE_INLINE void assert_failure(
-        const char* condition,
-        const char* message,
-        std::source_location loc = std::source_location::current()) {
-        // Implementation in debug_impl.cpp or inline for header-only
-        // Example: Print condition, message, file, line, then abort
-    }
-
-    // Runtime failure handler
-    [[noreturn]] SENKAID_FORCE_INLINE void runtime_failure(
-        const char* condition,
-        const char* message,
-        std::source_location loc = std::source_location::current()) {
-        // Example: Throw std::runtime_error with formatted message
-    }
-
-    // Numeric stability check
-    template<typename T>
-    SENKAID_FORCE_INLINE void numeric_check(
-        T value,
-        const char* expr,
-        const char* message,
-        std::source_location loc = std::source_location::current()) {
-        // Example: Check for NaN/Inf, log error if invalid
-        if (!std::isfinite(value)) {
-            runtime_failure(expr, message, loc);
-        }
-    }
-
-    // Logging functions
-    SENKAID_FORCE_INLINE void log_error(
-        const char* message,
-        std::source_location loc = std::source_location::current()) {
-        // Example: Write to stderr with [ERROR] prefix
-    }
-
-    SENKAID_FORCE_INLINE void log_warning(
-        const char* message,
-        std::source_location loc = std::source_location::current()) {
-        // Example: Write to stderr with [WARNING] prefix
-    }
-
-    SENKAID_FORCE_INLINE void log_info(
-        const char* message,
-        std::source_location loc = std::source_location::current()) {
-        // Example: Write to stdout with [INFO] prefix
-    }
-
-    // Enable/disable logging at runtime (optional)
-    inline bool logging_enabled = SENKAID_LOG_LEVEL > 0;
-
-    // Set runtime log level (thread-safe if needed)
-    SENKAID_FORCE_INLINE void set_log_level(LogLevel level) {
-        logging_enabled = static_cast<std::uint8_t>(level) <= SENKAID_LOG_LEVEL;
-    }
-} // namespace senkaid::utils::config::debug
-
-// ==========================================
-// Profiling Configuration
-// ==========================================
-
-#if SENKAID_ENABLE_PROFILING
-    #define SENKAID_PROFILE_SCOPE(name) \
-        senkaid::utils::config::debug::ProfileScope SENKAID_CONCAT(profile_scope_, __LINE__)(name)
-    #define SENKAID_PROFILE_FUNCTION() \
-        SENKAID_PROFILE_SCOPE(__FUNCTION__)
-#else
-    #define SENKAID_PROFILE_SCOPE(name)
-    #define SENKAID_PROFILE_FUNCTION()
-#endif
-
-// Macro for concatenating tokens
-#define SENKAID_CONCAT(a, b) SENKAID_CONCAT_INNER(a, b)
-#define SENKAID_CONCAT_INNER(a, b) a##b
-
-// ==========================================
-// Profiling Utilities
-// ==========================================
-
-namespace senkaid::utils::config::debug {
-    // Profiling scope class
-    class ProfileScope {
-        const char* name_;
-    public:
-        SENKAID_FORCE_INLINE explicit ProfileScope(const char* name) : name_(name) {
-            // Start timing (e.g., std::chrono or platform-specific)
-        }
-        SENKAID_FORCE_INLINE ~ProfileScope() {
-            // End timing, log or store result
-        }
-        ProfileScope(const ProfileScope&) = delete;
-        ProfileScope& operator=(const ProfileScope&) = delete;
-    };
-
-    // Platform-specific profiling initialization
-    #if defined(SENKAID_PROFILE_PERF)
-        SENKAID_FORCE_INLINE void init_profiler() {
-            // Initialize Linux perf profiler
-        }
-    #elif defined(SENKAID_PROFILE_VTUNE)
-        SENKAID_FORCE_INLINE void init_profiler() {
-            // Initialize Intel VTune profiler
-        }
+// SENKAID_DEBUG: Enables debug mode (assertions, logging, etc.).
+// Default: Enabled if NDEBUG is not defined, disabled in release builds.
+#ifndef SENKAID_DEBUG
+    #ifdef NDEBUG
+        #define SENKAID_DEBUG 0
     #else
-        SENKAID_FORCE_INLINE void init_profiler() {}
+        #define SENKAID_DEBUG 1
     #endif
+#endif
 
-    // Start/stop profiling session
-    SENKAID_FORCE_INLINE void start_profiling() {
-        if (SENKAID_ENABLE_PROFILING) init_profiler();
-    }
-
-    SENKAID_FORCE_INLINE void stop_profiling() {
-        // Clean up profiling resources
-    }
-} // namespace senkaid::utils::config::debug
-
-// ==========================================
-// Debug Breakpoints
-// ==========================================
-
-#if defined(SENKAID_COMPILER_MSVC)
-    #define SENKAID_DEBUG_BREAK __debugbreak()
-#elif defined(SENKAID_COMPILER_GCC) || defined(SENKAID_COMPILER_CLANG)
-    #define SENKAID_DEBUG_BREAK __builtin_trap()
+// SENKAID_ASSERT: Custom assertion macro for runtime checks.
+// Enabled in debug mode, no-op in release mode.
+#if SENKAID_DEBUG
+    #include <cassert>
+    #define SENKAID_ASSERT(condition, message) assert((condition) && message)
 #else
-    #define SENKAID_DEBUG_BREAK
+    #define SENKAID_ASSERT(condition, message)
 #endif
 
-// ==========================================
-// Memory Debugging
-// ==========================================
-
-#if SENKAID_ENABLE_DEBUG
-    #define SENKAID_MEMORY_TRACKING 1
-    #define SENKAID_TRACK_ALLOC(ptr, size) \
-        senkaid::utils::config::debug::track_allocation(ptr, size, std::source_location::current())
-    #define SENKAID_TRACK_FREE(ptr) \
-        senkaid::utils::config::debug::track_deallocation(ptr, std::source_location::current())
+// SENKAID_STATIC_ASSERT: Compile-time assertion using static_assert.
+// Enabled regardless of debug mode for type safety and constraints.
+#if defined(__cpp_static_assert) && __cpp_static_assert >= 201411L
+    #define SENKAID_STATIC_ASSERT(condition, message) static_assert(condition, message)
 #else
-    #define SENKAID_MEMORY_TRACKING 0
-    #define SENKAID_TRACK_ALLOC(ptr, size)
-    #define SENKAID_TRACK_FREE(ptr)
+    #define SENKAID_STATIC_ASSERT(condition, message)
 #endif
 
-namespace senkaid::utils::config::debug {
-    // Memory allocation tracking
-    SENKAID_FORCE_INLINE void track_allocation(
-        void* ptr,
-        std::size_t size,
-        std::source_location loc = std::source_location::current()) {
-        // Log allocation (e.g., store in global map)
-    }
+// --- Numerical Validation Macros ---
 
-    SENKAID_FORCE_INLINE void track_deallocation(
-        void* ptr,
-        std::source_location loc = std::source_location::current()) {
-        // Log deallocation, check for double-free
-    }
-
-    // Check for memory leaks
-    SENKAID_FORCE_INLINE void check_memory_leaks() {
-        // Report unfreed allocations
-    }
-} // namespace senkaid::utils::config::debug
-
-// ==========================================
-// Compile-Time Validation
-// ==========================================
-
-#if SENKAID_LOG_LEVEL > 3
-    #error "Invalid SENKAID_LOG_LEVEL; must be 0 (None), 1 (Error), 2 (Warning), or 3 (Info)"
+// SENKAID_VERIFY_NUMERICS: Enables runtime checks for NaN/Inf in numerical operations.
+// Default: Enabled in debug mode, disabled in release for performance.
+#ifndef SENKAID_VERIFY_NUMERICS
+    #if SENKAID_DEBUG
+        #define SENKAID_VERIFY_NUMERICS 1
+    #else
+        #define SENKAID_VERIFY_NUMERICS 0
+    #endif
 #endif
 
-#if SENKAID_CHECK_NUMERICS && !SENKAID_ENABLE_DEBUG
-    #warning "Numerical checks enabled without debug mode; performance may be impacted"
+// SENKAID_CHECK_NAN_INF: Checks for NaN/Inf in a value and triggers an assertion if found.
+#if SENKAID_VERIFY_NUMERICS
+    #include <cmath>
+    #define SENKAID_CHECK_NAN_INF(value, name) \
+        SENKAID_ASSERT(!std::isnan(value) && !std::isinf(value), "NaN or Inf detected in " name)
+#else
+    #define SENKAID_CHECK_NAN_INF(value, name)
 #endif
 
-#if SENKAID_MEMORY_TRACKING && !SENKAID_ENABLE_DEBUG
-    #error "Memory tracking requires debug mode"
+// SENKAID_USE_INTERVAL: Enables interval arithmetic for numerical validation.
+// Default: Disabled unless explicitly enabled (e.g., via CMake).
+#ifndef SENKAID_USE_INTERVAL
+    #define SENKAID_USE_INTERVAL 0
+#endif
+
+// SENKAID_CHECK_INTERVAL: Validates a value within a specified interval [min, max].
+#if SENKAID_USE_INTERVAL
+    #define SENKAID_CHECK_INTERVAL(value, min, max, name) \
+        SENKAID_ASSERT((value) >= (min) && (value) <= (max), "Value out of range in " name)
+#else
+    #define SENKAID_CHECK_INTERVAL(value, min, max, name)
+#endif
+
+// --- Logging Macros ---
+
+// SENKAID_LOG_LEVEL: Defines logging verbosity (0 = off, 1 = error, 2 = warning, 3 = info, 4 = debug).
+// Default: Disabled in release builds, debug level in debug builds.
+#ifndef SENKAID_LOG_LEVEL
+    #if SENKAID_DEBUG
+        #define SENKAID_LOG_LEVEL 4
+    #else
+        #define SENKAID_LOG_LEVEL 0
+    #endif
+#endif
+
+// SENKAID_LOG: Generic logging macro with level-based filtering.
+#if SENKAID_LOG_LEVEL > 0
+    #include <iostream>
+    #define SENKAID_LOG(level, message) \
+        do { \
+            if ((level) <= SENKAID_LOG_LEVEL) { \
+                std::cerr << "[SENKAID:" #level "] " << message << std::endl; \
+            } \
+        } while (0)
+#else
+    #define SENKAID_LOG(level, message)
+#endif
+
+// Convenience logging macros for specific levels
+#define SENKAID_LOG_ERROR(message) SENKAID_LOG(1, message)
+#define SENKAID_LOG_WARNING(message) SENKAID_LOG(2, message)
+#define SENKAID_LOG_INFO(message) SENKAID_LOG(3, message)
+#define SENKAID_LOG_DEBUG(message) SENKAID_LOG(4, message)
+
+// --- Profiling Macros ---
+
+// SENKAID_PROFILE: Enables profiling hooks for performance analysis (e.g., perf, Tracy).
+// Default: Disabled unless explicitly enabled (e.g., via CMake).
+#ifndef SENKAID_PROFILE
+    #define SENKAID_PROFILE 0
+#endif
+
+// SENKAID_PROFILE_BEGIN/END: Marks a profiling scope for performance-critical sections.
+#if SENKAID_PROFILE
+    #define SENKAID_PROFILE_BEGIN(name) \
+        do { \
+            /* Hook for external profiler (e.g., Tracy, perf) */ \
+        } while (0)
+    #define SENKAID_PROFILE_END() \
+        do { \
+            /* End profiling scope */ \
+        } while (0)
+#else
+    #define SENKAID_PROFILE_BEGIN(name)
+    #define SENKAID_PROFILE_END()
+#endif
+
+// SENKAID_PROFILE_SCOPE: Convenience macro for profiling a named scope.
+#define SENKAID_PROFILE_SCOPE(name) \
+    SENKAID_PROFILE_BEGIN(name); \
+    struct SENKAID_PROFILE_STRUCT_##name { \
+        ~SENKAID_PROFILE_STRUCT_##name() { SENKAID_PROFILE_END(); } \
+    } SENKAID_PROFILE_VAR_##name
+
+// --- Debugging Utilities ---
+
+// SENKAID_DEBUG_BREAK: Triggers a debugger breakpoint in debug mode.
+#if SENKAID_DEBUG
+    #if defined(_MSC_VER)
+        #define SENKAID_DEBUG_BREAK() __debugbreak()
+    #elif defined(__GNUC__) || defined(__clang__)
+        #define SENKAID_DEBUG_BREAK() __builtin_trap()
+    #else
+        #define SENKAID_DEBUG_BREAK()
+    #endif
+#else
+    #define SENKAID_DEBUG_BREAK()
+#endif
+
+// SENKAID_TRACE: Logs a trace message with file and line information in debug mode.
+#if SENKAID_DEBUG
+    #define SENKAID_TRACE(message) \
+        SENKAID_LOG_DEBUG(__FILE__ ":" SENKAID_STRINGIFY(__LINE__) ": " message)
+#else
+    #define SENKAID_TRACE(message)
 #endif

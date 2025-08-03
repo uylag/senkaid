@@ -4,3 +4,6 @@ build/
 cmake/
 .vscode/
 .cache/
+.venv/
+US_*
+*.log
