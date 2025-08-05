@@ -216,6 +216,14 @@
     #define SENKAID_HAS_CUDA_RUNTIME
 #endif
 
+#if SENKAID_HAS_INCLUDE(<hip/hip_runtime.h>)
+    #define SENKAID_HAS_HIP_RUNTIME
+#endif
+
+#if SENKAID_HAS_INCLUDE(<CL/sycl.hpp>)
+    #define SENKAID_HAS_SYCL
+#endif
+
 #ifndef SENKAID_ALLOW_BROKEN_PLATFORM
     // Required: <version>
     #ifndef SENKAID_HAS_INCLUDE_VERSION
